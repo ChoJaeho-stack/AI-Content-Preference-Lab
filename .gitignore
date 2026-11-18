@@ -6,3 +6,7 @@ venv/
 *.pyc
 .idea/
 target/
+.gradle/
+build/
+*.db
+*.sqlite3
