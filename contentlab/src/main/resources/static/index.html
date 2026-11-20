@@ -1,0 +1,2978 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>CONTENT LAB</title>
+
+    <style>
+
+        :root {
+
+            --bg: #FAF7F0;
+
+            --card: #FFFFFF;
+
+            --input: #F5F3EF;
+
+            --text: #222222;
+
+            --muted: #6f6a63;
+
+            --line: rgba(34, 34, 34, 0.08);
+
+            --accent: #7C3AED;
+
+            --accent-hover: #6D28D9;
+
+            --green: #46d369;
+
+            --header: rgba(250, 247, 240, 0.92);
+
+        }
+
+
+
+        * { box-sizing: border-box; }
+
+
+
+        body {
+
+            margin: 0;
+
+            background: var(--bg);
+
+            color: var(--text);
+
+            font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+
+            transition: background-color 0.55s ease, color 0.55s ease;
+
+        }
+
+
+
+        body.mode-result {
+
+            --bg: #141414;
+
+            --card: #242424;
+
+            --text: #FFFFFF;
+
+            --muted: #AAAAAA;
+
+            --line: rgba(255, 255, 255, 0.08);
+
+            --header: rgba(20, 20, 20, 0.94);
+
+        }
+
+
+
+        .header {
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 20;
+
+            background: var(--header);
+
+            border-bottom: 1px solid var(--line);
+
+            backdrop-filter: blur(12px);
+
+            transition: background-color 0.55s ease, border-color 0.55s ease;
+
+        }
+
+
+
+        .wrap {
+
+            width: min(1120px, calc(100% - 40px));
+
+            margin: 0 auto;
+
+        }
+
+
+
+        .header-inner {
+
+            min-height: 72px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 16px;
+
+        }
+
+
+
+        .logo {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            color: inherit;
+
+            text-decoration: none;
+
+        }
+
+
+
+        .logo-mark {
+
+            width: 36px;
+
+            height: 36px;
+
+            border-radius: 10px;
+
+            background: var(--accent);
+
+            color: #fff;
+
+            display: grid;
+
+            place-items: center;
+
+            font-weight: 800;
+
+            letter-spacing: -0.04em;
+
+            flex: none;
+
+        }
+
+
+
+        .logo strong {
+
+            display: block;
+
+            font-size: 15px;
+
+            letter-spacing: 0.08em;
+
+        }
+
+
+
+        .logo small {
+
+            display: block;
+
+            margin-top: 2px;
+
+            color: var(--muted);
+
+            font-size: 12px;
+
+        }
+
+
+
+        nav {
+
+            display: flex;
+
+            gap: 8px;
+
+        }
+
+
+
+        nav button {
+
+            width: auto;
+
+            margin: 0;
+
+            padding: 8px 14px;
+
+            border: 0;
+
+            border-radius: 999px;
+
+            background: transparent;
+
+            color: var(--text);
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+        }
+
+
+
+        nav button:hover {
+
+            background: rgba(124, 58, 237, 0.12);
+
+            color: var(--accent);
+
+        }
+
+
+
+        .view { animation: rise 0.5s ease; }
+
+        .view.is-leaving { animation: leave 0.28s ease forwards; }
+
+
+
+        @keyframes rise {
+
+            from { opacity: 0; transform: translateY(16px); }
+
+            to { opacity: 1; transform: none; }
+
+        }
+
+
+
+        @keyframes leave {
+
+            to { opacity: 0; transform: translateY(-10px); }
+
+        }
+
+
+
+        .hero {
+
+            padding: 72px 0 80px;
+
+        }
+
+
+
+        .hero-copy,
+
+        .form-card,
+
+        .loading,
+
+        .status {
+
+            width: min(640px, 100%);
+
+            margin-left: auto;
+
+            margin-right: auto;
+
+        }
+
+
+
+        .eyebrow {
+
+            margin: 0 0 12px;
+
+            color: var(--accent);
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            letter-spacing: 0.16em;
+
+        }
+
+
+
+        h1 {
+
+            margin: 0;
+
+            font-size: clamp(36px, 6vw, 56px);
+
+            line-height: 1.2;
+
+            letter-spacing: -0.04em;
+
+        }
+
+
+
+        .lead {
+
+            margin: 16px 0 0;
+
+            color: var(--muted);
+
+            font-size: 17px;
+
+            line-height: 1.7;
+
+        }
+
+
+
+        .form-card {
+
+            margin-top: 36px;
+
+            background: #FFFFFF;
+
+            color: #222222;
+
+            padding: 32px;
+
+            border-radius: 24px;
+
+            box-shadow: 0 20px 50px rgba(34, 24, 16, 0.06);
+
+        }
+
+
+
+        label {
+
+            display: block;
+
+            margin-bottom: 8px;
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+        }
+
+
+
+        input, select, button {
+
+            width: 100%;
+
+            border: 1px solid transparent;
+
+            border-radius: 12px;
+
+            font: inherit;
+
+            font-size: 16px;
+
+        }
+
+
+
+        input, select {
+
+            background: #F5F3EF;
+
+            color: #222222;
+
+            padding: 16px;
+
+            margin: 0 0 20px;
+
+        }
+
+
+
+        input::placeholder { color: #9a948a; }
+
+
+
+        input:focus, select:focus {
+
+            outline: none;
+
+            border-color: #7C3AED;
+
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+
+        }
+
+
+
+        select {
+
+            appearance: none;
+
+            background-image: linear-gradient(45deg, transparent 50%, #222 50%), linear-gradient(135deg, #222 50%, transparent 50%);
+
+            background-position: calc(100% - 22px) 22px, calc(100% - 16px) 22px;
+
+            background-size: 6px 6px, 6px 6px;
+
+            background-repeat: no-repeat;
+
+        }
+
+
+
+        #recommendButton {
+
+            margin: 4px 0 0;
+
+            padding: 16px;
+
+            background: #7C3AED;
+
+            color: #fff;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: background-color 0.2s ease, transform 0.2s ease;
+
+        }
+
+
+
+        #recommendButton:hover:not(:disabled) {
+
+            background: #6D28D9;
+
+            transform: translateY(-1px);
+
+        }
+
+
+
+        #recommendButton:disabled {
+
+            opacity: 0.65;
+
+            cursor: wait;
+
+        }
+
+
+
+        .loading {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 16px;
+
+            margin-top: 18px;
+
+            padding: 18px 20px;
+
+            background: #FFFFFF;
+
+            border-radius: 18px;
+
+            box-shadow: 0 12px 30px rgba(34, 24, 16, 0.05);
+
+        }
+
+
+
+        .loading[hidden], .status:empty { display: none; }
+
+
+
+        .spinner {
+
+            width: 36px;
+
+            height: 36px;
+
+            border-radius: 50%;
+
+            border: 3px solid #E7E2D8;
+
+            border-top-color: #7C3AED;
+
+            animation: spin 0.8s linear infinite;
+
+            flex: none;
+
+        }
+
+
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+
+
+        .loading p { margin: 0; color: #222222; }
+
+        .loading .loading-copy {
+
+            margin-top: 4px;
+
+            color: #6f6a63;
+
+            font-size: 14px;
+
+        }
+
+
+
+        .status {
+
+            margin-top: 16px;
+
+            padding: 14px 16px;
+
+            background: #FFFFFF;
+
+            color: #9F1239;
+
+            border-radius: 14px;
+
+            text-align: center;
+
+        }
+
+
+
+        .results { padding: 36px 0 80px; }
+
+
+
+        .results-head {
+
+            display: flex;
+
+            align-items: flex-end;
+
+            justify-content: space-between;
+
+            gap: 16px;
+
+            margin-bottom: 28px;
+
+        }
+
+
+
+        .results-head h2 {
+
+            margin: 0;
+
+            font-size: clamp(28px, 4vw, 40px);
+
+            letter-spacing: -0.04em;
+
+        }
+
+
+
+        #againButton {
+
+            width: auto;
+
+            padding: 14px 22px;
+
+            border-radius: 999px;
+
+            background: #7C3AED;
+
+            color: #fff;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: background-color 0.2s ease, transform 0.2s ease;
+
+        }
+
+
+
+        #againButton:hover {
+
+            background: #6D28D9;
+
+            transform: translateY(-1px);
+
+        }
+
+
+
+        .insight {
+
+            background: #242424;
+
+            border-radius: 16px;
+
+            padding: 22px 24px;
+
+            margin-bottom: 28px;
+
+        }
+
+
+
+        .insight p {
+
+            margin: 8px 0 0;
+
+            color: #FFFFFF;
+
+            line-height: 1.7;
+
+        }
+
+
+
+        .grid {
+
+            display: grid;
+
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+
+            gap: 22px;
+
+        }
+
+
+
+        .tile {
+
+            background: #242424;
+
+            border-radius: 14px;
+
+            overflow: hidden;
+
+            transition: transform 0.35s ease, box-shadow 0.35s ease;
+
+        }
+
+
+
+        .tile:hover {
+
+            transform: translateY(-8px);
+
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+
+        }
+
+
+
+        .poster {
+
+            aspect-ratio: 2 / 3;
+
+            background: #1a1a1a;
+
+            overflow: hidden;
+
+        }
+
+
+
+        .poster img {
+
+            width: 100%;
+
+            height: 100%;
+
+            object-fit: cover;
+
+            display: block;
+
+            transition: transform 0.45s ease;
+
+        }
+
+
+
+        .tile:hover img { transform: scale(1.05); }
+
+
+
+        .poster-fallback {
+
+            width: 100%;
+
+            height: 100%;
+
+            display: grid;
+
+            place-items: center;
+
+            padding: 20px;
+
+            text-align: center;
+
+            color: #AAAAAA;
+
+        }
+
+
+
+        .tile-body { padding: 16px 16px 18px; }
+
+
+
+        .tile-title {
+
+            margin: 0 0 8px;
+
+            font-size: 18px;
+
+            color: #FFFFFF;
+
+        }
+
+
+
+        .score {
+
+            margin: 0 0 8px;
+
+            color: var(--green);
+
+            font-weight: 700;
+
+        }
+
+
+
+        .bar {
+
+            height: 4px;
+
+            background: #3a3a3a;
+
+            border-radius: 99px;
+
+            overflow: hidden;
+
+            margin-bottom: 12px;
+
+        }
+
+
+
+        .bar span {
+
+            display: block;
+
+            height: 100%;
+
+            background: var(--green);
+
+        }
+
+
+
+        .meta, .reason {
+
+            margin: 0;
+
+            color: #AAAAAA;
+
+            line-height: 1.65;
+
+        }
+
+
+
+        .meta { margin-bottom: 10px; font-size: 13px; }
+
+        .reason { font-size: 14px; }
+
+
+
+        .empty {
+
+            margin: 0;
+
+            color: #AAAAAA;
+
+        }
+
+
+
+        @media (max-width: 900px) {
+
+            .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+        }
+
+
+
+        @media (max-width: 680px) {
+
+            .wrap { width: min(1120px, calc(100% - 28px)); }
+
+            .header-inner { min-height: 64px; }
+
+            .logo small { display: none; }
+
+            .hero { padding: 40px 0 56px; }
+
+            .form-card { padding: 22px; }
+
+            .grid { grid-template-columns: 1fr; }
+
+            .results-head { flex-direction: column; align-items: stretch; }
+
+            #againButton { width: 100%; }
+
+            .loading { align-items: flex-start; }
+
+        }
+
+
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *, *::before, *::after {
+
+                animation: none !important;
+
+                transition: none !important;
+
+            }
+
+        }
+
+
+
+        #explore { padding: 44px 0 80px; }
+
+        #searchForm { background: var(--card); padding: 22px; border-radius: 20px; margin: 24px 0; }
+
+        .search-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+
+        .filters { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 14px; }
+
+        #searchForm input, #searchForm select { margin: 0; min-width: 0; }
+
+        .search-action { background: var(--accent); color: white; padding: 12px 22px; width: auto; cursor: pointer; font-weight: 700; }
+
+        .search-action:disabled { opacity: .45; cursor: default; }
+
+        #exploreGrid { display: grid; grid-template-columns: repeat(auto-fill,minmax(170px,1fr)); gap: 18px; }
+
+        #exploreGrid .tile { background: white; border: 1px solid var(--line); }
+
+        #exploreGrid .tile:hover { transform: translateY(-4px); box-shadow: 0 10px 24px #0001; }
+
+        #exploreGrid .tile-title { color: #222; }
+
+        #exploreGrid .meta, #exploreGrid .reason { color: #6f6a63; }
+
+        #exploreGrid .poster { background: #ebe5da; }
+
+        #exploreGrid details { font-size: 13px; line-height: 1.6; }
+
+        #exploreGrid summary { cursor: pointer; color: var(--accent); }
+
+        #pager[hidden] { display: none; }
+
+        #pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 28px; }
+
+        @media(max-width:680px) { .header-inner {flex-wrap:wrap;padding:10px 0;} nav {flex-wrap:wrap;} .filters {grid-template-columns:1fr;} #exploreGrid {grid-template-columns:repeat(2,minmax(0,1fr));} }
+
+
+
+        #detailView { padding: 40px 0 80px; }
+
+        .detail-back { width:auto; padding:12px 20px; background:var(--accent); color:white; cursor:pointer; font-weight:700; margin-bottom:24px; }
+
+        .detail-card { background:var(--card); border-radius:24px; padding:28px; display:grid; grid-template-columns:minmax(140px,300px) 1fr; gap:32px; }
+
+        .detail-card .poster { border-radius:16px; background:#ebe5da; }
+
+        .detail-card h2 { font-size:clamp(28px,5vw,48px); margin:8px 0 16px; }
+
+        .detail-rating { color:var(--accent); font-weight:700; font-size:20px; }
+
+        .detail-tags { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 24px; }
+
+        .detail-tag { background:#ede5fc; color:#6d28d9; padding:7px 12px; border-radius:999px; font-size:14px; }
+
+        .detail-overview { line-height:1.8; white-space:pre-wrap; }
+
+        #exploreGrid .poster[role=button] { cursor:pointer; }
+
+        #exploreGrid .poster[role=button]:focus-visible { outline:3px solid var(--accent); outline-offset:-3px; }
+
+        @media(max-width:680px) { .detail-card { grid-template-columns:1fr; padding:20px; } .detail-card .poster { max-width:260px; width:100%; margin:auto; } }
+
+    .similar-section { margin-top: 38px; }
+    .similar-section h2 { font-size: 26px; margin-bottom: 8px; }
+    .similar-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:16px; }
+    .similar-grid .tile { background:white; border:1px solid var(--line); }
+    .similar-grid .tile:hover { transform:translateY(-4px); box-shadow:0 10px 24px #0001; }
+    .similar-grid .tile-title { color:#222; font-size:16px; }
+    .similar-grid .meta { color:#6f6a63; overflow-wrap:anywhere; }
+    .similar-grid .poster { background:#ebe5da; cursor:pointer; }
+    .similar-grid .poster:focus-visible { outline:3px solid var(--accent); outline-offset:-3px; }
+    @media(max-width:900px){ .similar-grid {grid-template-columns:repeat(3,minmax(0,1fr));} }
+    @media(max-width:680px){ .similar-grid {grid-template-columns:repeat(2,minmax(0,1fr));} }
+    /* CONTENT LAB MEMBER */
+.cl-member-actions { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+.cl-member-actions button, .cl-favorite-btn {
+    border:1px solid var(--border,#ddd);
+    border-radius:10px; padding:9px 13px; cursor:pointer;
+    background:var(--card,#fff); color:var(--text,inherit);
+}
+.cl-member-actions .cl-primary { background:var(--accent); color:white; }
+.cl-favorite-btn { margin-top:10px; width:100%; }
+.cl-favorite-btn.active { color:#df5275; border-color:#df5275; }
+.cl-modal[hidden] { display:none !important; }
+.cl-modal {
+    position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,.55); display:flex;
+    align-items:center; justify-content:center; padding:18px;
+}
+.cl-modal-panel {
+    width:min(440px,100%); max-height:85vh; overflow:auto;
+    background:var(--card,#fff); color:var(--text,inherit);
+    border-radius:20px; padding:25px;
+    box-shadow:0 15px 60px rgba(0,0,0,.2);
+}
+.cl-modal-panel input {
+    width:100%; padding:12px; margin:7px 0 14px;
+    border:1px solid #ccc; border-radius:9px;
+    background:transparent; color:inherit; box-sizing:border-box;
+}
+.cl-modal-panel button { cursor:pointer; }
+.cl-modal-submit {
+    width:100%; padding:13px; border:0; border-radius:10px;
+    background:var(--accent); color:white; font-weight:700;
+}
+.cl-modal-message { min-height:22px; font-size:13px; }
+.cl-modal-close { float:right; padding:5px 10px; }
+.cl-favorite-item {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 0; border-bottom:1px solid #ddd;
+}
+.cl-favorite-item img { width:55px; height:75px; object-fit:cover; border-radius:7px; }
+.cl-favorite-item .cl-favorite-info { flex:1; min-width:0; }
+.cl-favorite-item button { padding:7px; border-radius:8px; }
+@media(max-width:680px) {
+    .cl-member-actions { margin-top:10px; }
+    .cl-modal-panel { padding:18px; }
+}
+.cl-favorite-item {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 0;
+}
+.cl-favorite-item img {
+    flex:0 0 65px;
+}
+.cl-favorite-item .cl-favorite-info {
+    flex:1;
+    min-width:0;
+}
+.cl-favorite-item .cl-favorite-info strong {
+    display:block;
+    overflow-wrap:anywhere;
+}
+.cl-favorite-item > button {
+    width:auto;
+    flex:0 0 auto;
+    white-space:nowrap;
+    padding:9px 14px;
+}
+</style>
+
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="wrap header-inner">
+
+        <a class="logo" href="#analyze" id="logoLink">
+
+            <span class="logo-mark">CL</span>
+
+            <span>
+
+                <strong>CONTENT LAB</strong>
+
+                <small>AI 콘텐츠 취향 연구소</small>
+
+            </span>
+
+        </a>
+
+        <nav>
+
+            <button type="button" id="navAnalyze">취향 분석</button>
+
+            <button type="button" id="navResults">추천</button>
+
+        <button type="button" id="navExplore">콘텐츠 탐색</button>
+
+            <div class="cl-member-actions">
+                <span id="clUserLabel" hidden></span>
+                <button type="button" id="clLogin">로그인</button>
+                <button type="button" id="clRegister" class="cl-primary">회원가입</button>
+                <button type="button" id="clFavorites" hidden>♥ 내 찜</button>
+                <button type="button" id="clLogout" hidden>로그아웃</button>
+            </div>
+        </nav>
+
+    </div>
+
+</header>
+
+
+
+<div id="clAuthModal" class="cl-modal" hidden>
+    <section class="cl-modal-panel">
+        <button type="button" class="cl-modal-close" data-cl-close="auth">닫기 ✕</button>
+        <h2 id="clAuthTitle">로그인</h2>
+
+        <form id="clLoginForm">
+            <label>이메일</label>
+            <input id="clLoginEmail" type="email" required maxlength="255" autocomplete="username">
+            <label>비밀번호</label>
+            <input id="clLoginPassword" type="password" required autocomplete="current-password">
+            <button class="cl-modal-submit" type="submit">로그인</button>
+        </form>
+
+        <form id="clRegisterForm" hidden>
+            <label>닉네임</label>
+            <input id="clRegisterNickname" required maxlength="50" autocomplete="nickname">
+            <label>이메일</label>
+            <input id="clRegisterEmail" type="email" required maxlength="255" autocomplete="email">
+            <label>비밀번호 (8자 이상)</label>
+            <input id="clRegisterPassword" type="password" required minlength="8" autocomplete="new-password">
+            <button class="cl-modal-submit" type="submit">회원가입</button>
+        </form>
+
+        <p id="clAuthMessage" class="cl-modal-message" role="status"></p>
+        <button type="button" id="clSwitchAuth">회원가입하기</button>
+    </section>
+</div>
+
+<div id="clFavoritesModal" class="cl-modal" hidden>
+    <section class="cl-modal-panel">
+        <button type="button" class="cl-modal-close" data-cl-close="favorites">닫기 ✕</button>
+        <h2>♥ 나의 찜 목록</h2>
+        <p id="clFavoritesMessage" role="status">불러오는 중...</p>
+        <div id="clFavoritesList"></div>
+    </section>
+</div>
+<main>
+
+    <section id="analyze" class="view">
+
+        <div class="wrap hero">
+
+            <div class="hero-copy">
+
+                <p class="eyebrow">CONTENT LAB</p>
+
+                <h1>당신의 취향을 발견하다.</h1>
+
+                <p class="lead">좋아하는 작품과 피하고 싶은 요소를 알려주시면, AI가 취향에 맞는 콘텐츠를 골라 드립니다.</p>
+
+            </div>
+
+
+
+            <form class="form-card" id="tasteForm" autocomplete="off">
+
+                <label for="liked">좋아하는 작품</label>
+
+                <input id="liked" placeholder="예: 데블스 플랜, 오징어 게임">
+
+
+
+                <label for="disliked">싫어하는 요소</label>
+
+                <input id="disliked" placeholder="예: 공포, 잔인한 장면">
+
+
+
+                <label for="contentType">추천 작품 유형</label>
+
+                <select id="contentType">
+                    <option value="movie">영화</option>
+                    <option value="drama">드라마</option>
+                    <option value="variety">예능</option>
+                    <option value="webtoon">웹툰</option>
+                </select>
+
+                <div id="webtoonSurvey" hidden>
+                    <label for="tasteGenres">웹툰 선호 장르 (쉼표로 구분)</label>
+                    <input id="tasteGenres" placeholder="예: 판타지, 로맨스">
+
+                    <label for="tasteStory">선호 스토리</label>
+                    <input id="tasteStory" placeholder="예: 성장, 복수">
+
+                    <label for="tasteMood">선호 분위기</label>
+                    <input id="tasteMood" placeholder="예: 따뜻함, 긴장감">
+
+                    <label for="tastePacing">선호 전개 속도</label>
+                    <input id="tastePacing" placeholder="예: 빠른 전개">
+                </div>
+
+                <button id="recommendButton" type="submit">취향 분석하기</button>
+
+
+
+                <div id="loading" class="loading" hidden>
+
+                    <div class="spinner" aria-hidden="true"></div>
+
+                    <div>
+
+                        <p>취향을 분석하고 있습니다</p>
+
+                        <p class="loading-copy">입력하신 작품과 피하고 싶은 요소를 기준으로 콘텐츠를 고르고 있습니다.</p>
+
+                    </div>
+
+                </div>
+
+
+
+                <p id="status" class="status" role="alert"></p>
+
+            </form>
+
+        </div>
+
+    </section>
+
+
+
+    <section id="results" class="view results" hidden>
+
+        <div class="wrap">
+
+            <div class="results-head">
+
+                <div>
+
+                    <p class="eyebrow">CONTENT LAB</p>
+
+                    <h2>추천 콘텐츠</h2>
+
+                </div>
+
+                <button id="againButton" type="button">다시 취향 분석하기</button>
+
+            </div>
+
+            <div id="result"></div>
+
+        </div>
+
+    </section>
+
+    <section id="explore" class="view" hidden>
+
+        <div class="wrap">
+
+            <p class="eyebrow">DISCOVER CONTENT</p>
+
+            <h1>새로운 콘텐츠를 발견하다.</h1>
+
+            <p class="lead">작품명과 원하는 조건으로 콘텐츠를 찾아보세요.</p>
+
+            <form id="searchForm">
+
+                <label for="searchKeyword">작품명</label>
+
+                <div class="search-row"><input id="searchKeyword" placeholder="예: 런닝맨"><button class="search-action" type="submit">검색</button></div>
+
+                <div class="filters">
+
+                    <div><label for="searchType">콘텐츠 유형</label><select id="searchType"><option value="">전체 유형</option><option value="tv">TV (드라마·예능)</option><option value="movie">영화</option><option value="webtoon">웹툰</option></select></div>
+
+                    <div id="searchOttFilter"><label for="searchOtt">OTT</label><select id="searchOtt"><option value="">전체 OTT</option><option>넷플릭스</option><option>티빙</option><option>웨이브</option><option>왓챠</option><option>디즈니+</option><option>쿠팡플레이</option></select></div>
+
+                    <div id="searchSortFilter"><label for="searchSort">정렬</label><select id="searchSort"><option value="popularity">인기순</option><option value="rating">평점순</option><option value="title">제목순</option></select></div>
+                    <div id="searchGenreFilter" hidden><label for="searchGenre">웹툰 장르</label><input id="searchGenre" maxlength="40" placeholder="예: 판타지"></div>
+                    <div id="searchSerialFilter" hidden><label for="searchSerial">연재 상태</label><input id="searchSerial" maxlength="40" placeholder="카탈로그에 표시된 연재 상태"></div>
+
+                </div>
+
+            </form>
+
+            <p id="searchStatus" role="status" aria-live="polite"></p>
+
+            <div id="exploreGrid"></div>
+
+            <div id="pager" hidden><button class="search-action" id="prevPage" type="button">이전</button><span id="pageLabel"></span><button class="search-action" id="nextPage" type="button">다음</button></div>
+
+        </div>
+
+    </section>
+
+    <section id="detailView" class="view" hidden>
+
+        <div class="wrap">
+
+            <button id="detailBack" class="detail-back" type="button">← 콘텐츠 탐색으로 돌아가기</button>
+
+            <div id="detailContent" aria-live="polite"></div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+
+<script>
+
+    const exploreView = document.getElementById("explore");
+
+    const analyzeView = document.getElementById("analyze");
+
+    const resultsView = document.getElementById("results");
+
+    const result = document.getElementById("result");
+
+    const status = document.getElementById("status");
+
+    const loading = document.getElementById("loading");
+
+    const button = document.getElementById("recommendButton");
+
+    const likedInput = document.getElementById("liked");
+
+    const dislikedInput = document.getElementById("disliked");
+
+    const contentTypeInput = document.getElementById("contentType");
+    const recommendationTypes = {
+        movie: {contentType: "movie", preference: "영화"},
+        drama: {contentType: "tv", preference: "드라마"},
+        variety: {contentType: "tv", preference: "예능"},
+        webtoon: {contentType: "webtoon", preference: "전체"}
+    };
+    const tasteDimensionInputs = {
+        genres: document.getElementById("tasteGenres"),
+        story: document.getElementById("tasteStory"),
+        mood: document.getElementById("tasteMood"),
+        pacing: document.getElementById("tastePacing")
+    };
+    const webtoonSurvey = document.getElementById("webtoonSurvey");
+    function syncWebtoonSurvey() {
+        webtoonSurvey.hidden = contentTypeInput.value !== "webtoon";
+    }
+    contentTypeInput.addEventListener("change", syncWebtoonSurvey);
+    window.addEventListener("pageshow", syncWebtoonSurvey);
+    syncWebtoonSurvey();
+
+
+
+    function addElement(parent, tag, text, className) {
+
+        const element = document.createElement(tag);
+
+        element.textContent = text;
+
+        if (className) element.className = className;
+
+        parent.appendChild(element);
+
+        return element;
+
+    }
+
+
+
+    const tasteWorkspaceKey = "contentlab_taste_workspace_v1";
+    const tasteDraftInputs = {liked: likedInput, disliked: dislikedInput,
+        type: contentTypeInput, ...tasteDimensionInputs};
+    let tasteWorkspaceOwner = null;
+    let lastRecommendation = null;
+    let tasteView = "analyze";
+
+    function persistTasteWorkspace() {
+        if (tasteWorkspaceOwner === null) return;
+        const draft = Object.fromEntries(Object.entries(tasteDraftInputs)
+            .map(([key, input]) => [key, input.value]));
+        try {
+            sessionStorage.setItem(tasteWorkspaceKey, JSON.stringify({
+                owner: tasteWorkspaceOwner, draft, recommendation: lastRecommendation, view: tasteView
+            }));
+        } catch {
+            // Keep the current page usable if session storage is unavailable.
+        }
+    }
+
+    function restoreTasteWorkspace(owner) {
+        tasteWorkspaceOwner = owner;
+        let saved;
+        try {
+            saved = JSON.parse(sessionStorage.getItem(tasteWorkspaceKey));
+        } catch {
+            return;
+        }
+        if (saved?.owner !== owner) {
+            if (saved) {
+                try { sessionStorage.removeItem(tasteWorkspaceKey); } catch {}
+            }
+            return;
+        }
+        for (const [key, input] of Object.entries(tasteDraftInputs)) {
+            const value = saved.draft?.[key];
+            if (typeof value === "string" && (key !== "type" || Object.hasOwn(recommendationTypes, value))) {
+                input.value = value;
+            }
+        }
+        syncWebtoonSurvey();
+        if (Array.isArray(saved.recommendation?.recommendations)) {
+            renderResults(saved.recommendation);
+            lastRecommendation = saved.recommendation;
+            if (saved.view === "results") showTasteView("results");
+        }
+    }
+
+    function clearTasteWorkspace() {
+        tasteWorkspaceOwner = null;
+        lastRecommendation = null;
+        try { sessionStorage.removeItem(tasteWorkspaceKey); } catch {}
+        for (const [key, input] of Object.entries(tasteDraftInputs)) {
+            input.value = key === "type" ? "movie" : "";
+        }
+        syncWebtoonSurvey();
+        result.replaceChildren();
+        status.textContent = "";
+        setLoading(false);
+        showTasteView("analyze");
+    }
+
+    function setLoading(on) {
+        button.disabled = on;
+        document.getElementById("navExplore").disabled = on;
+        Object.values(tasteDraftInputs).forEach(input => { input.disabled = on; });
+        loading.hidden = !on;
+        button.textContent = on ? "분석 중" : "취향 분석하기";
+    }
+
+    function showTasteView(view) {
+        closeDetail();
+        exploreView.hidden = true;
+        tasteView = view;
+        const showingResults = view === "results";
+        analyzeView.hidden = showingResults;
+        resultsView.hidden = !showingResults;
+        document.body.classList.toggle("mode-result", showingResults);
+        persistTasteWorkspace();
+        window.scrollTo({top: 0, behavior: "smooth"});
+    }
+
+    function openAnalysis() {
+        showTasteView("analyze");
+        likedInput.focus();
+    }
+
+    const tasteForm = document.getElementById("tasteForm");
+    tasteForm.addEventListener("input", persistTasteWorkspace);
+    tasteForm.addEventListener("change", persistTasteWorkspace);
+    tasteForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        recommend();
+    });
+
+    document.getElementById("againButton").addEventListener("click", openAnalysis);
+    document.getElementById("logoLink").addEventListener("click", (event) => {
+        event.preventDefault();
+        openAnalysis();
+    });
+    document.getElementById("navAnalyze").addEventListener("click", openAnalysis);
+    document.getElementById("navResults").addEventListener("click", () => {
+        if (lastRecommendation) showTasteView("results");
+        else openAnalysis();
+    });
+
+
+    async function recommend() {
+
+        const liked = likedInput.value.trim();
+
+        const disliked = dislikedInput.value.trim();
+
+        const {contentType, preference} = recommendationTypes[contentTypeInput.value];
+        const survey = Object.fromEntries(Object.entries(tasteDimensionInputs)
+            .map(([dimension, input]) => [dimension,
+                input.value.split(",").map(value => value.trim()).filter(Boolean)]));
+        const hasSurvey = contentType === "webtoon" && Object.values(survey).some(values => values.length > 0);
+
+
+
+        if (!liked && !hasSurvey && contentType !== "webtoon") {
+
+            alert("좋아하는 작품을 입력해주세요.");
+
+            return;
+
+        }
+
+
+
+        const taste =
+
+            `좋아하는 작품: ${liked || (hasSurvey ? "설문 취향" : "입력 없음")},
+
+             싫어하는 요소: ${disliked || "없음"},
+
+             추천 작품 유형: ${contentTypeInput.selectedOptions[0].textContent}`;
+
+
+
+        setLoading(true);
+
+        status.textContent = "";
+        persistTasteWorkspace();
+        const requestToken = clToken;
+
+
+
+        try {
+
+            if (hasSurvey) {
+                const surveyResponse = await fetch("/api/me/taste/survey", {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(requestToken ? { "Authorization": `Bearer ${requestToken}` } : {})
+                    },
+                    body: JSON.stringify(survey)
+                });
+                if (requestToken !== clToken) return;
+                if (!surveyResponse.ok) {
+                    setLoading(false);
+                    status.textContent = surveyResponse.status === 503
+                        ? "현재 웹툰 취향 설문을 사용할 수 없습니다."
+                        : surveyResponse.status === 401
+                            ? "웹툰 취향을 저장하려면 다시 로그인해주세요."
+                            : "웹툰 취향 설문을 저장하지 못했습니다.";
+                    return;
+                }
+            }
+
+            const response = await fetch("/api/recommend", {
+
+                method: "POST",
+
+                headers: {
+    "Content-Type": "application/json",
+    ...(requestToken ? { "Authorization": `Bearer ${requestToken}` } : {})
+},
+
+                body: JSON.stringify({
+
+                    taste: taste,
+
+                    liked: liked,
+
+                    disliked: disliked,
+
+                    preference: preference,
+
+                    contentType: contentType
+
+                })
+
+            });
+            if (requestToken !== clToken) return;
+
+            if (!response.ok) {
+
+                const messages = {
+                    400: "입력한 취향과 제외 조건을 확인해주세요.",
+                    401: "추천을 받으려면 다시 로그인해주세요.",
+                    502: "추천 서비스 응답을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.",
+                    503: contentType === "webtoon"
+                        ? "현재 웹툰 추천을 이용할 수 없습니다. 잠시 후 다시 시도해주세요."
+                        : "추천 서비스가 일시적으로 혼잡합니다. 잠시 후 다시 시도해주세요.",
+                    504: "추천 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."
+                };
+                setLoading(false);
+                status.textContent = messages[response.status] || "추천 요청에 실패했습니다.";
+                return;
+
+            }
+
+
+
+            const data = await response.json();
+            if (requestToken !== clToken) return;
+            if (!Array.isArray(data?.recommendations)
+                || data.recommendations.some(item => !item || typeof item !== "object")) {
+                throw new Error("Invalid recommendation response");
+            }
+            const fields = ["id", "type", "title", "poster_url", "personal_fit_score",
+                "match_score", "service_platform", "authors", "rating", "ott", "reason"];
+            const display = {
+                contentType,
+                taste_analysis: data.taste_analysis,
+                profile_summary: data.profile_summary,
+                recommendations: data.recommendations.map(item => Object.fromEntries(
+                    fields.map(field => [field, item[field]])
+                ))
+            };
+
+            renderResults(display);
+            lastRecommendation = display;
+            setLoading(false);
+            showTasteView("results");
+
+        } catch (error) {
+            if (requestToken !== clToken) return;
+
+            setLoading(false);
+
+            status.textContent = "추천에 실패했습니다. 서버 연결을 확인해주세요.";
+
+        }
+
+    }
+
+
+
+    function renderResults(data) {
+
+        result.replaceChildren();
+
+
+
+        if (data.taste_analysis) {
+
+            const analysis = document.createElement("section");
+
+            analysis.className = "insight";
+
+            addElement(analysis, "p", "AI 취향 분석", "eyebrow");
+
+            addElement(analysis, "p", data.taste_analysis);
+
+            result.appendChild(analysis);
+
+        }
+
+        const dimensions = data.profile_summary || {};
+        const dimensionLabels = {genres: "장르", story: "스토리", mood: "분위기", pacing: "전개 속도"};
+        const profileLabels = Object.entries(dimensions).flatMap(([dimension, values]) =>
+            Object.entries(values || {}).filter(([, weight]) => Number(weight) > 0)
+                .map(([feature]) => `${dimensionLabels[dimension] || dimension}: ${feature}`));
+        if (profileLabels.length) {
+            addElement(result, "p", `반영된 취향: ${profileLabels.slice(0, 10).join(" · ")}`, "meta");
+        }
+
+
+
+        const recommendations = data.recommendations || [];
+        const isWebtoon = data.contentType === "webtoon"
+            || recommendations[0]?.type === "webtoon";
+
+        if (isWebtoon && recommendations.length > 0) {
+            addElement(result, "h2", `웹툰 추천 TOP ${recommendations.length}`);
+        }
+
+
+
+        if (recommendations.length === 0) {
+
+            addElement(result, "p", isWebtoon ? "추천할 웹툰이 없습니다." : "추천 작품이 없습니다.", "empty");
+
+            return;
+
+        }
+
+
+
+        const grid = document.createElement("div");
+
+        grid.className = "grid";
+
+
+
+        recommendations.forEach((item) => {
+
+            const card = document.createElement("article");
+
+            card.className = "tile";
+
+
+
+            const poster = document.createElement("div");
+
+            poster.className = "poster";
+
+
+
+            if (item.poster_url) {
+
+                const image = document.createElement("img");
+
+                image.src = item.poster_url;
+
+                image.alt = item.title || "포스터";
+
+                image.loading = "lazy";
+
+                image.referrerPolicy = "no-referrer";
+
+                image.addEventListener("error", () => {
+
+                    poster.replaceChildren();
+
+                    addElement(poster, "div", item.title || "포스터 없음", "poster-fallback");
+
+                });
+
+                poster.appendChild(image);
+
+            } else {
+
+                addElement(poster, "div", item.title || "포스터 없음", "poster-fallback");
+
+            }
+
+
+
+            card.appendChild(poster);
+
+
+
+            const body = document.createElement("div");
+
+            body.className = "tile-body";
+
+
+
+            addElement(body, "h3", item.title || "제목 없음", "tile-title");
+
+
+
+            const score = Math.min(100, Math.max(0,
+                Number(item.personal_fit_score ?? item.match_score) || 0));
+
+            addElement(body, "p", `취향 일치도 ${score}%`, "score");
+
+
+
+            const bar = document.createElement("div");
+
+            bar.className = "bar";
+
+            const fill = document.createElement("span");
+
+            fill.style.width = `${score}%`;
+
+            bar.appendChild(fill);
+
+            body.appendChild(bar);
+
+
+
+            const ott = Array.isArray(item.ott) ? item.ott.join(", ") : item.ott;
+
+            addElement(
+
+                body,
+
+                "p",
+
+                item.type === "webtoon"
+                    ? ["웹툰", item.service_platform, ...parseList(item.authors)].filter(Boolean).join(" · ")
+                    : `평점 ${item.rating ?? "정보 없음"} · OTT ${ott || "정보 없음"}`,
+
+                "meta"
+
+            );
+
+            addElement(body, "p", item.reason || "", "reason");
+            appendFavoriteButton(body, item);
+
+            if (item.type === "webtoon") {
+                appendWebtoonFeedback(body, item);
+            }
+
+
+
+            card.appendChild(body);
+
+            grid.appendChild(card);
+
+        });
+
+
+
+        result.appendChild(grid);
+
+    }
+
+
+
+    const el = id => document.getElementById(id);
+
+    let searchPage = 0, pageCount = 0, activeSearch = null, appliedQuery = null;
+
+    function formatOtt(value) {
+
+        if (typeof value === "string") { try { value = JSON.parse(value); } catch (_) { return value || "정보 없음"; } }
+
+        return Array.isArray(value) ? value.join(", ") || "정보 없음" : "정보 없음";
+
+    }
+
+    function readSearch() {
+
+        const keyword = el("searchKeyword").value.trim();
+        const type = el("searchType").value;
+        if (type === "webtoon") {
+            return {keyword, type, genre: el("searchGenre").value.trim(), status: el("searchSerial").value.trim()};
+        }
+        return {keyword, type, ott: el("searchOtt").value, sort: el("searchSort").value};
+
+    }
+
+    function syncSearchFilters() {
+        const webtoon = el("searchType").value === "webtoon";
+        el("searchOttFilter").hidden = webtoon;
+        el("searchSortFilter").hidden = webtoon;
+        el("searchGenreFilter").hidden = !webtoon;
+        el("searchSerialFilter").hidden = !webtoon;
+        el("searchKeyword").placeholder = webtoon ? "웹툰 제목 또는 작가" : "예: 런닝맨";
+    }
+
+    async function loadSearch(page = 0, fresh = true) {
+
+        if (activeSearch) activeSearch.abort();
+
+        const controller = new AbortController(); activeSearch = controller;
+
+        if (fresh || !appliedQuery) appliedQuery = readSearch();
+
+        const webtoon = appliedQuery.type === "webtoon";
+        const size = 20;
+        const params = new URLSearchParams({page: String(webtoon ? page + 1 : page), size: String(size)});
+
+        for (const [key,value] of Object.entries(appliedQuery)) {
+            if (value && (!webtoon || key !== "type")) params.set(key, value);
+        }
+
+        const grid = el("exploreGrid"), message = el("searchStatus");
+
+        grid.replaceChildren(); el("pager").hidden = true; message.textContent = "콘텐츠를 불러오는 중...";
+
+        try {
+
+            const endpoint = webtoon ? "/api/webtoons" : "/api/contents/search";
+            const response = await fetch(endpoint + "?" + params, {signal:controller.signal});
+
+            if (!response.ok) throw new Error("HTTP " + response.status);
+
+            const data = await response.json();
+
+            if (controller !== activeSearch) return;
+
+            const items = webtoon ? data : data.content;
+            if (!Array.isArray(items)) throw new Error("잘못된 응답 형식");
+
+            searchPage = webtoon ? page : data.number ?? data.page?.number ?? page;
+
+            const hasNextWebtoonPage = webtoon && items.length === size && page < 99;
+            pageCount = webtoon ? page + 1 + Number(hasNextWebtoonPage) : data.totalPages ?? data.page?.totalPages ?? 0;
+
+            const total = webtoon ? null : data.totalElements ?? data.page?.totalElements;
+
+            message.textContent = items.length ? (total == null ? "검색 결과" : `총 ${total.toLocaleString()}개 작품`) : "검색 결과가 없습니다.";
+
+            for (const item of items) {
+
+                const card = addElement(grid,"article","","tile");
+
+                const poster = addElement(card,"div","","poster");
+
+                poster.setAttribute("role","button");
+
+                poster.tabIndex = 0;
+
+                poster.setAttribute("aria-label", (item.title || "작품") + " 상세 정보");
+
+                poster.addEventListener("click",()=>openDetail(item));
+
+                poster.addEventListener("keydown",event=>{if(event.key === "Enter" || event.key === " "){event.preventDefault();openDetail(item);}});
+
+                const fallback = () => {poster.replaceChildren();addElement(poster,"div",item.title || "포스터 없음","poster-fallback");};
+
+                if(item.poster_url) { const img = document.createElement("img"); img.alt = item.title || "포스터"; img.loading = "lazy"; img.referrerPolicy = "no-referrer"; img.onerror = fallback; img.src = item.poster_url; poster.appendChild(img); } else fallback();
+
+                const body = addElement(card,"div","","tile-body");
+
+                addElement(body,"h3",item.title || "제목 없음","tile-title");
+
+                if (item.type === "webtoon") {
+                    const info = ["웹툰", item.servicePlatform, item.serialStatus, ...parseList(item.authors)].filter(Boolean);
+                    addElement(body, "p", info.join(" · "), "meta");
+                    const genres = parseList(item.genreTags);
+                    if (genres.length) addElement(body, "p", genres.join(" · "), "meta");
+                } else {
+                    addElement(body,"p",`${item.type === "movie" ? "영화" : "TV"} · ★ ${item.rating == null ? "정보 없음" : Number(item.rating).toFixed(1)}`,"meta");
+                    addElement(body,"p","OTT: " + formatOtt(item.ott),"meta");
+                }
+                appendFavoriteButton(body, item);
+
+                if(item.overview) { const detail = addElement(body,"details","");addElement(detail,"summary","줄거리 보기");addElement(detail,"p",item.overview,"reason"); }
+
+            }
+
+            el("pager").hidden = pageCount <= 1;
+
+            el("pageLabel").textContent = webtoon ? `${searchPage + 1}페이지` : `${searchPage+1} / ${pageCount}`;
+
+            el("prevPage").disabled = searchPage <= 0; el("nextPage").disabled = searchPage+1 >= pageCount;
+
+        } catch(error) { if(error.name !== "AbortError" && controller === activeSearch) message.textContent = "검색에 실패했습니다. 서버와 검색 조건을 확인해주세요. (" + error.message + ")"; }
+
+    }
+
+    el("navExplore").addEventListener("click", () => {
+
+        closeDetail();
+
+        analyzeView.hidden = true; resultsView.hidden = true; exploreView.hidden = false;
+
+        document.body.classList.remove("mode-result"); window.scrollTo(0,0); loadSearch();
+
+    });
+
+    el("searchForm").addEventListener("submit", event => {event.preventDefault();loadSearch();});
+
+    el("searchType").addEventListener("change", () => { syncSearchFilters(); loadSearch(); });
+    for(const id of ["searchOtt","searchSort"]) el(id).addEventListener("change",()=>loadSearch());
+    syncSearchFilters();
+
+    el("prevPage").addEventListener("click",()=>{if(searchPage>0) loadSearch(searchPage-1,false);});
+
+    el("nextPage").addEventListener("click",()=>{if(searchPage+1<pageCount) loadSearch(searchPage+1,false);});
+
+
+
+    let detailRequest = null, exploreScroll = 0;
+
+    const genreNames = {12:"모험",14:"판타지",16:"애니메이션",18:"드라마",27:"공포",28:"액션",35:"코미디",36:"역사",37:"서부",53:"스릴러",80:"범죄",99:"다큐멘터리",878:"SF",9648:"미스터리",10402:"음악",10749:"로맨스",10751:"가족",10752:"전쟁",10759:"액션·모험",10762:"어린이",10763:"뉴스",10764:"리얼리티",10765:"SF·판타지",10766:"연속극",10767:"토크",10768:"전쟁·정치",10770:"TV 영화"};
+
+    function parseList(value) {
+
+        if(typeof value === "string") { try { value=JSON.parse(value); } catch (_) { return value ? [value] : []; } }
+
+        return Array.isArray(value) ? value : [];
+
+    }
+
+    function closeDetail() {
+
+        if(detailRequest) detailRequest.abort();
+
+        detailRequest = null;
+
+        el("detailView").hidden = true;
+
+    }
+
+    async function openDetail(item) {
+
+        if (!exploreView.hidden) exploreScroll = window.scrollY;
+        closeDetail();
+
+        analyzeView.hidden = true; resultsView.hidden = true; exploreView.hidden = true;
+
+        document.body.classList.remove("mode-result");
+
+        el("detailView").hidden = false;
+
+        window.scrollTo(0,0);
+
+        const target = el("detailContent"); target.textContent = "상세 정보를 불러오는 중...";
+
+        const controller = new AbortController(); detailRequest = controller;
+
+        try {
+
+            const id = encodeURIComponent(item.id);
+            const endpoint = item.type === "webtoon" ? `/api/webtoons/${id}` : `/api/contents/${encodeURIComponent(item.type)}/${id}`;
+            const response = await fetch(endpoint, {signal:controller.signal});
+
+            if(!response.ok) throw new Error("HTTP " + response.status);
+
+            const data = await response.json();
+
+            if(detailRequest !== controller) return;
+
+            target.replaceChildren();
+
+            const card=addElement(target,"article","","detail-card");
+
+            const poster=addElement(card,"div","","poster");
+
+            const fallback=()=>{poster.replaceChildren();addElement(poster,"div",data.title || "포스터 없음","poster-fallback");};
+
+            if(data.poster_url){const img=document.createElement("img");img.alt=data.title || "포스터";img.referrerPolicy="no-referrer";img.onerror=fallback;img.src=data.poster_url;poster.appendChild(img);}else fallback();
+
+            const info=addElement(card,"div","");
+
+            addElement(info,"p",data.type === "webtoon" ? "웹툰" : data.type === "movie" ? "MOVIE" : "TV CONTENT","eyebrow");
+
+            addElement(info,"h2",data.title || "제목 없음");
+            appendFavoriteButton(info, data);
+
+            if (data.type === "webtoon") {
+                const authors = parseList(data.authors);
+                if (authors.length) addElement(info, "p", `작가 ${authors.join(" · ")}`, "meta");
+                const release = [data.servicePlatform, data.serialStatus].filter(Boolean);
+                if (release.length) addElement(info, "p", release.join(" · "), "meta");
+                const genres = addElement(info, "div", "", "detail-tags");
+                for (const tag of parseList(data.genreTags)) addElement(genres, "span", tag, "detail-tag");
+                const officialUrl = parseHttpUrl(data.officialUrl);
+                if (officialUrl) {
+                    const link = addElement(info, "a", "공식 연재처에서 보기");
+                    link.href = officialUrl;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                }
+                appendWebtoonFeedback(info, data);
+            } else {
+                addElement(info,"p",data.rating == null ? "평점 정보 없음" : `★ ${Number(data.rating).toFixed(1)} / 10`,"detail-rating");
+                const genres = addElement(info, "div", "", "detail-tags");
+                for(const id of parseList(data.genre_ids)) addElement(genres,"span",genreNames[id] || `장르 ${id}`,"detail-tag");
+                addElement(info,"h3","시청 가능한 OTT");
+
+                const platforms=addElement(info,"div","","detail-tags");
+
+                const values=parseList(data.ott);
+
+                for(const name of values.length ? values : ["정보 없음"]) addElement(platforms,"span",String(name),"detail-tag");
+            }
+
+            addElement(info,"h3","작품 소개");
+
+            addElement(info,"p",data.overview || "줄거리 정보가 없습니다.","detail-overview");
+            loadSimilar(target, data, controller);
+
+        } catch(error) { if(error.name !== "AbortError" && detailRequest === controller) target.textContent="상세 정보를 불러오지 못했습니다. ("+error.message+")"; }
+
+    }
+
+    function parseHttpUrl(value) {
+        try {
+            const url = new URL(value);
+            return ["https:", "http:"].includes(url.protocol) ? url.href : null;
+        } catch {
+            return null;
+        }
+    }
+
+    el("detailBack").addEventListener("click",()=>{closeDetail();exploreView.hidden=false;window.scrollTo(0,exploreScroll);});
+
+
+
+
+    async function loadSimilar(target, data, controller) {
+        const section = addElement(target, "section", "", "similar-section");
+        addElement(section, "p", "RELATED CONTENT", "eyebrow");
+        addElement(section, "h2", "이 작품과 비슷한 콘텐츠");
+        const message = addElement(section, "p", "유사 작품을 불러오는 중...");
+        message.setAttribute("role", "status");
+        const grid = addElement(section, "div", "", "similar-grid");
+        try {
+            const response = await fetch(`/api/contents/${encodeURIComponent(data.type)}/${encodeURIComponent(data.id)}/similar`, {signal: controller.signal});
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            const items = await response.json();
+            if (detailRequest !== controller) return;
+            if (!Array.isArray(items)) throw new Error("잘못된 응답 형식");
+            message.textContent = items.length ? "장르, 유형, 평점, 인기도를 기준으로 추천합니다." : "유사 작품이 없습니다.";
+            items.slice(0, 6).forEach(item => {
+                const card = addElement(grid, "article", "", "tile");
+                const poster = addElement(card, "div", "", "poster");
+                poster.setAttribute("role", "button");
+                poster.tabIndex = 0;
+                poster.setAttribute("aria-label", (item.title || "작품") + " 상세 정보");
+                poster.addEventListener("click", () => openDetail(item));
+                poster.addEventListener("keydown", event => {
+                    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openDetail(item); }
+                });
+                const fallback = () => { poster.replaceChildren(); addElement(poster, "div", item.title || "포스터 없음", "poster-fallback"); };
+                if (item.poster_url) {
+                    const img = document.createElement("img");
+                    img.alt = item.title || "포스터";
+                    img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+                    img.onerror = fallback; img.src = item.poster_url; poster.appendChild(img);
+                } else fallback();
+                const body = addElement(card, "div", "", "tile-body");
+                addElement(body, "h3", item.title || "제목 없음", "tile-title");
+                if (item.type === "webtoon") {
+                    addElement(body, "p", "웹툰", "meta");
+                } else {
+                    addElement(body, "p", item.rating == null ? "평점 정보 없음" : `★ ${Number(item.rating).toFixed(1)}`, "meta");
+                    addElement(body, "p", "OTT: " + formatOtt(item.ott), "meta");
+                }
+            });
+        } catch (error) {
+            if (error.name !== "AbortError" && detailRequest === controller) message.textContent = "유사 작품을 불러오지 못했습니다. 다시 상세 화면을 열어주세요.";
+        }
+    }
+
+
+// ===== CONTENT LAB MEMBER SYSTEM =====
+
+let clToken = localStorage.getItem("contentlab_token");
+let clUser = null;
+let clFavoriteIds = new Set();
+let clFavoriteItems = [];
+let clFavoritesRequest = 0;
+
+const clAuthModal = document.getElementById("clAuthModal");
+const clFavoritesModal = document.getElementById("clFavoritesModal");
+
+function clOpenAuth(mode = "login") {
+    clAuthModal.hidden = false;
+    clSetAuthMode(mode);
+}
+
+function clSetAuthMode(mode) {
+    const login = mode === "login";
+    document.getElementById("clAuthTitle").textContent = login ? "로그인" : "회원가입";
+    document.getElementById("clLoginForm").hidden = !login;
+    document.getElementById("clRegisterForm").hidden = login;
+    document.getElementById("clSwitchAuth").textContent =
+        login ? "회원가입하기" : "로그인하기";
+    document.getElementById("clAuthMessage").textContent = "";
+}
+
+function clCloseAuth() {
+    clAuthModal.hidden = true;
+}
+
+function clUpdateUI() {
+    const loggedIn = !!clToken && !!clUser;
+    document.getElementById("clLogin").hidden = loggedIn;
+    document.getElementById("clRegister").hidden = loggedIn;
+    document.getElementById("clLogout").hidden = !loggedIn;
+    document.getElementById("clFavorites").hidden = !loggedIn;
+
+    const label = document.getElementById("clUserLabel");
+    label.hidden = !loggedIn;
+    label.textContent = loggedIn ? `${clUser.nickname || clUser.email}님` : "";
+}
+
+function clAuthHeaders() {
+    const headers = {};
+    if (clToken) headers.Authorization = `Bearer ${clToken}`;
+    return headers;
+}
+
+async function clRequest(url, options = {}) {
+    const headers = new Headers(options.headers || {});
+    const token = clToken;
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    if (options.body && !headers.has("Content-Type")) {
+        headers.set("Content-Type", "application/json");
+    }
+
+    const response = await fetch(url, {...options, headers});
+
+    if (response.status === 401 && token && token === clToken) {
+        clLogout(false);
+        throw new Error("로그인이 만료되었습니다. 다시 로그인해주세요.");
+    }
+
+    if (!response.ok) {
+        let message = `요청 실패 (${response.status})`;
+        try {
+            const data = await response.json();
+            message = data.detail || data.message || message;
+        } catch {}
+        throw new Error(message);
+    }
+
+    if (response.status === 204) return null;
+    return response.json();
+}
+
+function clKey(item) {
+    return `${item.type}:${item.id}`;
+}
+
+function appendWebtoonFeedback(parent, item) {
+    const actions = addElement(parent, "div", "", "feedback-actions");
+    const message = addElement(parent, "p", "", "meta");
+    message.setAttribute("role", "status");
+
+    for (const [rating, label] of [[1, "좋아요"], [0, "보통"], [-1, "싫어요"]]) {
+        const button = addElement(actions, "button", label);
+        button.type = "button";
+        button.addEventListener("click", async () => {
+            if (!clToken || !clUser) {
+                clOpenAuth("login");
+                return;
+            }
+            const buttons = actions.querySelectorAll("button");
+            buttons.forEach(control => { control.disabled = true; });
+            message.textContent = "";
+            try {
+                await clRequest("/api/me/taste/evaluations", {
+                    method: "PUT",
+                    body: JSON.stringify({type: item.type, id: item.id, rating})
+                });
+                message.textContent = `“${label}” 평가를 저장했습니다.`;
+            } catch (error) {
+                message.textContent = error.message;
+            } finally {
+                buttons.forEach(control => { control.disabled = false; });
+            }
+        });
+    }
+}
+
+function clUpdateFavoriteButtons() {
+    document.querySelectorAll("[data-favorite-key]").forEach(button => {
+        const active = clFavoriteIds.has(button.dataset.favoriteKey);
+        button.classList.toggle("active", active);
+        button.textContent = active ? "♥ 찜 취소" : "♡ 찜하기";
+    });
+}
+
+function appendFavoriteButton(parent, item) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "cl-favorite-btn";
+    button.dataset.favoriteKey = clKey(item);
+
+    const active = clFavoriteIds.has(clKey(item));
+    button.classList.toggle("active", active);
+    button.textContent = active ? "♥ 찜 취소" : "♡ 찜하기";
+
+    button.addEventListener("click", async () => {
+        if (!clToken || !clUser) {
+            clOpenAuth("login");
+            return;
+        }
+
+        button.disabled = true;
+        const token = clToken;
+        try {
+            const key = clKey(item);
+            const exists = clFavoriteIds.has(key);
+            const method = exists ? "DELETE" : "POST";
+
+            await clRequest(
+                `/api/favorites/${encodeURIComponent(item.type)}/${encodeURIComponent(item.id)}`,
+                {method}
+            );
+            if (token !== clToken) return;
+
+            if (exists) clFavoriteIds.delete(key);
+            else clFavoriteIds.add(key);
+
+            clUpdateFavoriteButtons();
+
+            if (!clFavoritesModal.hidden) await clLoadFavorites();
+        } catch (error) {
+            if (token === clToken) alert(error.message);
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    parent.appendChild(button);
+    return button;
+}
+
+async function clLoadFavorites() {
+    const token = clToken;
+    if (!token) return;
+    const request = ++clFavoritesRequest;
+    const message = document.getElementById("clFavoritesMessage");
+    const list = document.getElementById("clFavoritesList");
+
+    message.textContent = "찜 목록을 불러오는 중...";
+    list.replaceChildren();
+
+    try {
+        const items = await clRequest("/api/favorites");
+        if (token !== clToken || request !== clFavoritesRequest) return;
+        clFavoriteItems = Array.isArray(items) ? items : [];
+        clFavoriteIds = new Set(clFavoriteItems.map(clKey));
+
+        message.textContent = clFavoriteItems.length
+            ? `총 ${clFavoriteItems.length}개의 작품을 찜했습니다.`
+            : "아직 찜한 작품이 없습니다.";
+
+        for (const item of clFavoriteItems) {
+            const row = document.createElement("div");
+            row.className = "cl-favorite-item";
+
+            if (item.poster_url) {
+                const img = document.createElement("img");
+                img.src = item.poster_url;
+                img.alt = item.title || "작품 포스터";
+                img.loading = "lazy";
+                row.appendChild(img);
+            }
+
+            const info = document.createElement("div");
+            info.className = "cl-favorite-info";
+
+            const title = document.createElement("strong");
+            title.textContent = item.title || "제목 없음";
+
+            const type = document.createElement("p");
+            type.textContent = item.type === "webtoon" ? "웹툰" : item.type === "movie" ? "영화" : "TV";
+
+            info.append(title, type);
+            row.appendChild(info);
+
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.textContent = "찜 취소";
+
+            remove.addEventListener("click", async () => {
+                if (token !== clToken) return;
+                try {
+                    await clRequest(
+                        `/api/favorites/${encodeURIComponent(item.type)}/${encodeURIComponent(item.id)}`,
+                        {method:"DELETE"}
+                    );
+                    if (token !== clToken) return;
+                    clFavoriteIds.delete(clKey(item));
+                    clUpdateFavoriteButtons();
+                    await clLoadFavorites();
+                } catch (error) {
+                    if (token === clToken) alert(error.message);
+                }
+            });
+
+            row.appendChild(remove);
+            list.appendChild(row);
+        }
+
+        clUpdateFavoriteButtons();
+    } catch (error) {
+        if (token === clToken && request === clFavoritesRequest) message.textContent = error.message;
+    }
+}
+
+async function clRestoreSession(nickname) {
+    if (!clToken) {
+        clUpdateUI();
+        restoreTasteWorkspace("guest");
+        return;
+    }
+
+    const token = clToken;
+    try {
+        const me = await clRequest("/api/me");
+        if (token !== clToken) return;
+        clUser = {email:me.email, nickname:nickname || me.email};
+        clUpdateUI();
+        if (Number.isSafeInteger(me.memberId) && me.memberId > 0) {
+            restoreTasteWorkspace(String(me.memberId));
+        }
+        await clLoadFavorites();
+    } catch {
+        if (token === clToken) clLogout(false);
+    }
+}
+
+document.getElementById("clLogin").addEventListener("click", () => clOpenAuth("login"));
+document.getElementById("clRegister").addEventListener("click", () => clOpenAuth("register"));
+
+document.getElementById("clLogout").addEventListener("click", () => clLogout(true));
+
+document.getElementById("clFavorites").addEventListener("click", async () => {
+    clFavoritesModal.hidden = false;
+    await clLoadFavorites();
+});
+
+document.getElementById("clSwitchAuth").addEventListener("click", () => {
+    const loginHidden = document.getElementById("clLoginForm").hidden;
+    clSetAuthMode(loginHidden ? "login" : "register");
+});
+
+document.querySelectorAll("[data-cl-close]").forEach(button => {
+    button.addEventListener("click", () => {
+        if (button.dataset.clClose === "auth") clCloseAuth();
+        else clFavoritesModal.hidden = true;
+    });
+});
+
+document.getElementById("clLoginForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const message = document.getElementById("clAuthMessage");
+    const email = document.getElementById("clLoginEmail").value;
+    const password = document.getElementById("clLoginPassword").value;
+
+    message.textContent = "로그인 중...";
+
+    try {
+        const result = await fetch("/api/auth/login", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({email,password})
+        });
+
+        if (!result.ok) {
+            throw new Error(result.status === 401
+                ? "이메일 또는 비밀번호를 확인해주세요."
+                : `로그인 실패 (${result.status})`);
+        }
+
+        const data = await result.json();
+        clResetAccount(data.token);
+        localStorage.setItem("contentlab_token", clToken);
+
+        clCloseAuth();
+        await clRestoreSession(data.nickname);
+    } catch (error) {
+        message.textContent = error.message;
+    }
+});
+
+document.getElementById("clRegisterForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const message = document.getElementById("clAuthMessage");
+    const nickname = document.getElementById("clRegisterNickname").value.trim();
+    const email = document.getElementById("clRegisterEmail").value.trim();
+    const password = document.getElementById("clRegisterPassword").value;
+
+    message.textContent = "회원가입 중...";
+
+    try {
+        await clRequest("/api/auth/register", {
+            method:"POST",
+            body:JSON.stringify({nickname,email,password})
+        });
+
+        document.getElementById("clLoginEmail").value = email;
+        document.getElementById("clLoginPassword").value = "";
+        clSetAuthMode("login");
+        document.getElementById("clAuthMessage").textContent =
+            "회원가입 성공! 로그인해주세요.";
+    } catch (error) {
+        message.textContent = error.message;
+    }
+});
+
+function clResetAccount(token) {
+    clToken = token;
+    clUser = null;
+    clFavoriteIds.clear();
+    clFavoriteItems = [];
+    clFavoritesRequest++;
+    clFavoritesModal.hidden = true;
+    document.getElementById("clFavoritesList").replaceChildren();
+    document.getElementById("clFavoritesMessage").textContent = "";
+    document.dispatchEvent(new Event("contentlab:account-reset"));
+    clearTasteWorkspace();
+    clUpdateUI();
+    clUpdateFavoriteButtons();
+}
+
+function clLogout(showMessage = true) {
+    clResetAccount(null);
+    localStorage.removeItem("contentlab_token");
+    restoreTasteWorkspace("guest");
+    if (showMessage) alert("로그아웃했습니다.");
+}
+
+window.addEventListener("storage", event => {
+    if (event.key === "contentlab_token" && event.newValue !== clToken) {
+        clResetAccount(event.newValue);
+        clRestoreSession();
+    }
+});
+
+clAuthModal.addEventListener("click", event => {
+    if (event.target === clAuthModal) clCloseAuth();
+});
+
+clFavoritesModal.addEventListener("click", event => {
+    if (event.target === clFavoritesModal) clFavoritesModal.hidden = true;
+});
+
+clRestoreSession();
+
+// ===== END CONTENT LAB MEMBER SYSTEM =====
+</script>
+
+<script>
+(() => {
+    const btn = document.createElement("button");
+    btn.id = "clHistory";
+    btn.type = "button";
+    btn.textContent = "추천 기록";
+    btn.className = document.getElementById("clFavorites").className;
+    document.getElementById("clFavorites").after(btn);
+
+    const modal = document.createElement("div");
+    modal.className = "cl-modal";
+    modal.hidden = true;
+    modal.innerHTML = `
+        <section class="cl-modal-panel">
+            <button type="button" class="cl-modal-close" id="clCloseHistory">닫기 ✕</button>
+            <h2>나의 AI 추천 기록</h2>
+            <p id="clHistoryMessage"></p>
+            <div id="clHistoryList"></div>
+        </section>`;
+    document.body.appendChild(modal);
+
+    const favorites = document.getElementById("clFavorites");
+
+    function syncHistory() {
+        btn.hidden = favorites.hidden;
+        if (btn.hidden) {
+            modal.hidden = true;
+            document.getElementById("clHistoryList").replaceChildren();
+        }
+    }
+
+    new MutationObserver(syncHistory).observe(favorites, {
+        attributes: true,
+        attributeFilter: ["hidden"]
+    });
+
+    syncHistory();
+    document.addEventListener("contentlab:account-reset", () => {
+        modal.hidden = true;
+        document.getElementById("clHistoryList").replaceChildren();
+        document.getElementById("clHistoryMessage").textContent = "";
+    });
+
+    document.getElementById("clCloseHistory").onclick = () => {
+        modal.hidden = true;
+    };
+
+    modal.onclick = event => {
+        if (event.target === modal) modal.hidden = true;
+    };
+
+    btn.onclick = async () => {
+        if (!clToken) return;
+
+        const token = clToken;
+        modal.hidden = false;
+        const list = document.getElementById("clHistoryList");
+        const message = document.getElementById("clHistoryMessage");
+
+        list.replaceChildren();
+        message.textContent = "불러오는 중...";
+
+        try {
+            const response = await fetch("/api/history", {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error("조회 실패");
+
+            const data = await response.json();
+            if (clToken !== token) return;
+
+            message.textContent = data.length
+                ? `총 ${data.length}개의 추천 기록`
+                : "아직 추천 기록이 없습니다.";
+
+            data.sort((a,b) =>
+                new Date(b.createdAt) - new Date(a.createdAt)
+            );
+
+            data.forEach(item => {
+                const card = document.createElement("div");
+                card.style.cssText = "border:1px solid #94a3b855;padding:18px;border-radius:14px;margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7";
+
+                let parsed;
+try {
+    parsed = typeof item.result === "string"
+        ? JSON.parse(item.result) : item.result;
+} catch {
+    parsed = {taste_analysis: item.result};
+}
+
+function addText(tag, value, style = "") {
+    const el = document.createElement(tag);
+    el.textContent = value;
+    el.style.cssText = style;
+    card.appendChild(el);
+}
+
+addText("small",
+    new Date(item.createdAt).toLocaleString("ko-KR"),
+    "opacity:.65;font-size:13px");
+
+addText("h3", item.liked || "나의 콘텐츠 취향",
+    "font-size:23px;margin:12px 0");
+
+addText("p", "선호 콘텐츠: " + (item.preference || "-"));
+addText("p", "피하고 싶은 요소: " + (item.disliked || "-"));
+
+addText("h4", "AI 취향 분석",
+    "color:#a78bfa;margin:20px 0 8px");
+
+addText("p", parsed?.taste_analysis || "-",
+    "font-size:15px;line-height:1.8");
+
+addText("h4", "추천 콘텐츠",
+    "color:#a78bfa;margin:20px 0 10px");
+
+const recommendations = parsed?.recommendations || [];
+
+recommendations.forEach((rec, index) => {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:15px;padding:14px;margin:10px 0;border:1px solid #94a3b833;border-radius:12px";
+
+    const poster = rec.poster_url || rec.poster_path || rec.poster;
+
+    if (typeof poster === "string" && poster) {
+        const img = document.createElement("img");
+        img.src = poster.startsWith("/")
+            ? "https://image.tmdb.org/t/p/w185" + poster
+            : poster;
+        img.style.cssText = "width:75px;border-radius:8px;object-fit:cover";
+        img.onerror = () => img.remove();
+        row.appendChild(img);
+    }
+
+    const info = document.createElement("div");
+
+    const title = document.createElement("strong");
+    title.textContent = (index + 1) + ". " + (rec.title || "작품");
+    info.appendChild(title);
+
+    const ott = document.createElement("p");
+    ott.textContent = rec.type === "webtoon"
+        ? ["웹툰", rec.service_platform].filter(Boolean).join(" · ")
+        : Array.isArray(rec.ott) ? rec.ott.join(" · ") : (rec.ott || "");
+    ott.style.cssText = "font-size:13px;opacity:.7;margin:6px 0";
+    info.appendChild(ott);
+    if (rec.type === "webtoon") {
+        const score = rec.personal_fit_score ?? rec.match_score;
+        if (typeof score === "number") addElement(info, "p", `취향 일치도 ${score}%`);
+        if (rec.reason) addElement(info, "p", rec.reason, "reason");
+    }
+
+    row.appendChild(info);
+    card.appendChild(row);
+});
+
+/* card.textContent = [
+                    new Date(item.createdAt).toLocaleString("ko-KR"),
+                    "",
+                    "좋아하는 작품: " + (item.liked || "-"),
+                    "싫어하는 요소: " + (item.disliked || "-"),
+                    "선호하는 분위기: " + (item.preference || "-"),
+                    "",
+                    "AI 추천 결과",
+                    item.result || "-"
+                ].join("\n"); */
+
+                const deleteBtn = document.createElement("button");
+deleteBtn.type = "button";
+deleteBtn.textContent = "기록 삭제";
+deleteBtn.style.cssText = "display:block;margin:20px 0 0 auto;padding:9px 16px;border:1px solid #ef4444;border-radius:8px;color:#ef4444;background:transparent;cursor:pointer;font-size:13px";
+
+deleteBtn.onclick = async () => {
+    if (clToken !== token) return;
+    if (!confirm("이 추천 기록을 삭제하시겠습니까?")) return;
+
+    deleteBtn.disabled = true;
+
+    try {
+        const response = await fetch(`/api/history/${item.id}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error("삭제 실패");
+        }
+
+        if (clToken === token) await btn.onclick();
+    } catch (error) {
+        if (clToken === token) alert("추천 기록을 삭제하지 못했습니다.");
+        deleteBtn.disabled = false;
+    }
+};
+
+card.appendChild(deleteBtn);
+list.appendChild(card);
+            });
+        } catch (error) {
+            if (clToken === token) message.textContent = "추천 기록을 불러오지 못했습니다.";
+        }
+    };
+})();
+</script>
+<script>
+(() => {
+    const favorites = document.getElementById("clFavorites");
+    const btn = document.createElement("button");
+    btn.id = "clProfile";
+    btn.type = "button";
+    btn.textContent = "마이페이지";
+    btn.className = favorites.className;
+    favorites.before(btn);
+
+    const modal = document.createElement("div");
+    modal.className = "cl-modal";
+    modal.hidden = true;
+
+    modal.innerHTML = `
+    <section class="cl-modal-panel">
+        <button class="cl-modal-close" id="clProfileClose">닫기 ✕</button>
+        <h2>MY CONTENT LAB</h2>
+        <p id="clProfileMessage"></p>
+        <div style="padding:24px;border-radius:20px;background:linear-gradient(135deg,#422078,#241b48);color:white;margin:20px 0">
+            <div style="font-size:42px">👤</div>
+            <h2 id="clProfileName"></h2>
+            <p id="clProfileEmail"></p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div style="border:1px solid #94a3b855;padding:22px;border-radius:16px;text-align:center">
+                <div>♥ 찜한 작품</div>
+                <h1 id="clProfileFavorites">0</h1>
+            </div>
+            <div style="border:1px solid #94a3b855;padding:22px;border-radius:16px;text-align:center">
+                <div>AI 추천 기록</div>
+                <h1 id="clProfileHistory">0</h1>
+            </div>
+        </div>
+
+        <h3 style="margin-top:30px">나의 콘텐츠 취향</h3>
+        <p style="opacity:.6;font-size:13px">찜한 작품 기준으로 분석합니다.</p>
+        <div id="clProfileStats"></div>
+
+<h3 style="margin-top:30px">나의 선호 장르 TOP 5</h3>
+<p style="opacity:.6;font-size:13px">
+    찜한 작품에 포함된 장르를 분석합니다.
+</p>
+<div id="clProfileGenres"></div>
+
+        <div style="display:grid;gap:12px;margin-top:25px">
+            <button id="clProfileOpenFavorites">나의 찜 목록 →</button>
+            <button id="clProfileOpenHistory">AI 추천 기록 →</button>
+        </div>
+    </section>`;
+
+    document.body.appendChild(modal);
+
+    function sync() {
+        btn.hidden = favorites.hidden;
+        if (btn.hidden) modal.hidden = true;
+    }
+
+    new MutationObserver(sync).observe(favorites,{
+        attributes:true,
+        attributeFilter:["hidden"]
+    });
+
+    sync();
+    document.addEventListener("contentlab:account-reset", () => {
+        modal.hidden = true;
+        for (const id of ["clProfileName", "clProfileEmail", "clProfileFavorites", "clProfileHistory",
+            "clProfileStats", "clProfileGenres", "clProfileMessage"]) {
+            document.getElementById(id).replaceChildren();
+        }
+    });
+
+    document.getElementById("clProfileClose").onclick = () => {
+        modal.hidden = true;
+    };
+
+    modal.onclick = e => {
+        if(e.target === modal) modal.hidden = true;
+    };
+
+    btn.onclick = async () => {
+        if (!clToken) return;
+
+        const token = clToken;
+        modal.hidden = false;
+        const message = document.getElementById("clProfileMessage");
+        const stats = document.getElementById("clProfileStats");
+
+        stats.replaceChildren();
+        document.getElementById("clProfileGenres").replaceChildren();
+        document.getElementById("clProfileName").textContent = "";
+        document.getElementById("clProfileEmail").textContent = "";
+        document.getElementById("clProfileFavorites").textContent = "-";
+        document.getElementById("clProfileHistory").textContent = "-";
+        message.textContent = "불러오는 중...";
+
+        try {
+            const response = await fetch("/api/me/stats", {
+                headers: {Authorization:`Bearer ${token}`}
+            });
+
+            if (!response.ok) throw new Error("조회 실패");
+
+            const data = await response.json();
+            if (clToken !== token) return;
+
+            message.textContent = "";
+
+            document.getElementById("clProfileName").textContent = data.nickname;
+            document.getElementById("clProfileEmail").textContent = data.email;
+            document.getElementById("clProfileFavorites").textContent = data.favoriteCount;
+            document.getElementById("clProfileHistory").textContent = data.historyCount;
+
+            const names = {
+                drama:"드라마",
+                variety:"예능",
+                movie:"영화",
+                tv:"기타 TV",
+                webtoon:"웹툰"
+            };
+
+            if (!data.favoriteCount) {
+                stats.textContent = "작품을 찜하면 취향 통계가 표시됩니다.";
+            }
+
+            (data.preferences || []).forEach(item => {
+                const percent = Math.round(item.count / data.favoriteCount * 100);
+                const row = document.createElement("div");
+                row.style.cssText = "margin:18px 0";
+
+                const label = document.createElement("p");
+                label.textContent = (names[item.type] || item.type) + " · " + percent + "%";
+
+                const track = document.createElement("div");
+                track.style.cssText = "height:12px;background:#94a3b833;border-radius:20px;overflow:hidden";
+
+                const bar = document.createElement("div");
+                bar.style.cssText = "height:100%;background:linear-gradient(90deg,#8b5cf6,#c084fc);border-radius:20px;width:" + percent + "%";
+
+                track.appendChild(bar);
+                row.append(label,track);
+                stats.appendChild(row);
+            });
+
+            const genreBox = document.getElementById("clProfileGenres");
+
+            const profileGenreNames = {
+                12:"모험",14:"판타지",16:"애니메이션",
+                18:"드라마",27:"공포",28:"액션",
+                35:"코미디",36:"역사",37:"서부",
+                53:"스릴러",80:"범죄",99:"다큐멘터리",
+                878:"SF",9648:"미스터리",10402:"음악",
+                10749:"로맨스",10751:"가족",10752:"전쟁",
+                10759:"액션·모험",10762:"어린이",
+                10763:"뉴스",10764:"리얼리티",
+                10765:"SF·판타지",10766:"연속극",
+                10767:"토크",10768:"전쟁·정치",10770:"TV 영화"
+            };
+
+            if (!data.genres || !data.genres.length) {
+                genreBox.textContent = "아직 분석할 장르 데이터가 없습니다.";
+            }
+
+            (data.genres || []).forEach((item, index) => {
+                const percent = Math.round(
+                    item.count / data.favoriteCount * 100
+                );
+
+                const row = document.createElement("div");
+                row.style.cssText = "margin:18px 0";
+
+                const label = document.createElement("p");
+                label.textContent =
+                    (index + 1) + ". " +
+                    (profileGenreNames[item.genreId] || "기타 장르") +
+                    " · " + percent + "%";
+
+                const track = document.createElement("div");
+                track.style.cssText =
+                    "height:12px;background:#94a3b833;border-radius:20px;overflow:hidden";
+
+                const bar = document.createElement("div");
+                bar.style.cssText =
+                    "height:100%;background:linear-gradient(90deg,#38bdf8,#818cf8);border-radius:20px;width:" +
+                    percent + "%";
+
+                track.appendChild(bar);
+                row.append(label, track);
+                genreBox.appendChild(row);
+            });
+
+        } catch {
+            if (clToken === token) {
+                message.textContent = "회원 정보를 불러오지 못했습니다.";
+            }
+        }
+    };
+
+    document.getElementById("clProfileOpenFavorites").onclick = () => {
+        modal.hidden = true;
+        favorites.click();
+    };
+
+    document.getElementById("clProfileOpenHistory").onclick = () => {
+        modal.hidden = true;
+        document.getElementById("clHistory").click();
+    };
+})();
+</script>
+<script>
+(() => {
+    const anchor = document.getElementById("clProfileOpenFavorites");
+
+    const section = document.createElement("div");
+    section.id = "clAccountSettings";
+    section.style.cssText = "margin-top:20px;display:grid;gap:12px";
+
+    section.innerHTML = `
+        <h3>회원 정보 관리</h3>
+
+        <details>
+            <summary style="cursor:pointer;padding:12px">닉네임 변경</summary>
+            <form id="clNicknameForm" style="display:grid;gap:12px;padding:12px">
+                <input id="clNewNickname" placeholder="새 닉네임" maxlength="50" required>
+                <button type="submit">닉네임 저장</button>
+                <p id="clNicknameMessage"></p>
+            </form>
+        </details>
+
+        <details>
+            <summary style="cursor:pointer;padding:12px">비밀번호 변경</summary>
+            <form id="clPasswordForm" style="display:grid;gap:12px;padding:12px">
+                <input id="clCurrentPassword" type="password" placeholder="현재 비밀번호" autocomplete="current-password" required>
+                <input id="clNewPassword" type="password" placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password" minlength="8" required>
+                <input id="clConfirmPassword" type="password" placeholder="새 비밀번호 확인" autocomplete="new-password" required>
+                <button type="submit">비밀번호 변경</button>
+                <p id="clPasswordMessage"></p>
+            </form>
+        </details>
+    `;
+
+    anchor.parentElement.after(section);
+
+    const el = id => document.getElementById(id);
+
+    async function update(path, data) {
+        return fetch("/api/me/" + path, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + clToken
+            },
+            body: JSON.stringify(data)
+        });
+    }
+
+    el("clNicknameForm").onsubmit = async e => {
+        e.preventDefault();
+
+        const message = el("clNicknameMessage");
+        const nickname = el("clNewNickname").value.trim();
+
+        try {
+            const response = await update("nickname", {nickname});
+
+            if (!response.ok) throw new Error();
+
+            const data = await response.json();
+            el("clProfileName").textContent = data.nickname;
+
+            if (clUser) {
+                clUser.nickname = data.nickname;
+                clUpdateUI();
+            }
+            message.textContent = "닉네임이 변경되었습니다.";
+            message.style.color = "#22c55e";
+
+            e.target.reset();
+        } catch {
+            message.textContent = "닉네임 변경에 실패했습니다.";
+            message.style.color = "#ef4444";
+        }
+    };
+
+    el("clPasswordForm").onsubmit = async e => {
+        e.preventDefault();
+
+        const message = el("clPasswordMessage");
+
+        const currentPassword = el("clCurrentPassword").value;
+        const newPassword = el("clNewPassword").value;
+        const confirmPassword = el("clConfirmPassword").value;
+
+        message.style.color = "#ef4444";
+
+        if (newPassword.length < 8) {
+            message.textContent = "8자 이상 입력해주세요.";
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            message.textContent = "새 비밀번호가 일치하지 않습니다.";
+            return;
+        }
+
+        try {
+            const response = await update("password", {
+                currentPassword,
+                newPassword,
+                confirmPassword
+            });
+
+            if (response.status === 401) {
+                message.textContent = "현재 비밀번호 또는 로그인 상태를 확인해주세요.";
+                return;
+            }
+
+            if (!response.ok) throw new Error();
+
+            e.target.reset();
+            message.textContent = "비밀번호가 변경되었습니다.";
+            message.style.color = "#22c55e";
+
+        } catch {
+            message.textContent = "비밀번호 변경에 실패했습니다.";
+        }
+    };
+
+    el("clLogout").addEventListener("click", () => {
+        el("clNicknameForm").reset();
+        el("clPasswordForm").reset();
+        el("clNicknameMessage").textContent = "";
+        el("clPasswordMessage").textContent = "";
+        section.querySelectorAll("details").forEach(d => d.open = false);
+    });
+})();
+</script>
+<!-- WEBTOON_VISUAL_UPGRADE_V1 -->
+</body>
+
+</html>
