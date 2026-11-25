@@ -48,6 +48,20 @@ Assert-Resolution $secondRecord.ResolutionReason 'DuplicateMastrIdAcrossWorks'
 
 $documented = { [pscustomobject]@{ result = [pscustomobject]@{ resultState = 'success'; totalCount = 1; itemlist = @($base) } } }
 Assert-Resolution ((Get-PageSet $documented '검증 대상').Count) 1
+$errorWithoutCount = {
+    [pscustomobject]@{ result = [pscustomobject]@{ resultState = 'error'; resultMessage = 'API error' } }
+}
+try { $null = Read-Page (& $errorWithoutCount); throw 'FailedToRejectErrorEnvelope' }
+catch { Assert-Resolution $_.Exception.Message 'UnsuccessfulResponse' }
+$missingCriteria = {
+    [pscustomobject]@{ result = [pscustomobject]@{ resultState = 'error'; resultMessage = '검색 조건을 입력하세요' } }
+}
+try { $null = Read-Page (& $missingCriteria); throw 'FailedToClassifyMissingCriteria' }
+catch { Assert-Resolution $_.Exception.Message 'RequiredSearchCriteria' }
+$emptyResponse = {
+    [pscustomobject]@{ result = [pscustomobject]@{ resultState = 'error'; resultMessage = '데이터가 없습니다'; totalCount = 0 } }
+}
+Assert-Resolution ((Read-Page (& $emptyResponse)).Total) 0
 $observed = {
     [pscustomobject]@{ result = [pscustomobject]@{ resultState = 'success'; totalCount = 1 }; itemList = @($noId) }
 }
@@ -70,4 +84,4 @@ Assert-Resolution $csvRecord.AuthorsJson '["글 작가","그림 작가"]'
 $arrayId = New-Candidate @{ mastrId = @('1000020001') }
 try { $null = Resolve-Work $target @($arrayId) $true; throw 'FailedToRejectArrayId' }
 catch { Assert-Resolution $_.Exception.Message 'UnexpectedFieldType' }
-'KMAS resolution self-test passed (23 assertions, zero live requests).'
+'KMAS resolution self-test passed (26 assertions, zero live requests).'

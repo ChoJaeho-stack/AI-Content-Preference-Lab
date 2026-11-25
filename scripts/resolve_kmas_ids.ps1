@@ -56,18 +56,22 @@ function Read-Items($Node, [int]$Depth = 0) {
 function Read-Page($Payload) {
     $result = $Payload.result
     if ($null -eq $result) { throw 'UnexpectedEnvelope' }
-    $total = 0
-    if (-not [int]::TryParse((Get-Text $result 'totalCount'), [ref]$total) -or $total -lt 0) {
-        if ((Get-Text $result 'resultMessage') -match '필수|검색조건|검색 조건|파라미터|입력') {
+    $resultState = Get-Text $result 'resultState'
+    if ($resultState -cne 'success') {
+        $message = Get-Text $result 'resultMessage'
+        if ($message -match '필수|검색조건|검색 조건|파라미터|입력') {
             throw 'RequiredSearchCriteria'
         }
-        throw 'InvalidTotalCount'
-    }
-    if ((Get-Text $result 'resultState') -cne 'success') {
-        if ($total -eq 0 -and (Get-Text $result 'resultMessage') -match '데이터가\s*없') {
+        $emptyTotal = 0
+        $hasEmptyTotal = [int]::TryParse((Get-Text $result 'totalCount'), [ref]$emptyTotal)
+        if ($hasEmptyTotal -and $emptyTotal -eq 0 -and $message -match '데이터가\s*없') {
             return @{ Total = 0; Items = @() }
         }
         throw 'UnsuccessfulResponse'
+    }
+    $total = 0
+    if (-not [int]::TryParse((Get-Text $result 'totalCount'), [ref]$total) -or $total -lt 0) {
+        throw 'InvalidTotalCount'
     }
     $containers = @(foreach ($parent in @($Payload, $result)) {
         $parent.PSObject.Properties | Where-Object { $_.Name -eq 'itemlist' }
