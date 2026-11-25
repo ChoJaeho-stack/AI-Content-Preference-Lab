@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "source_provider": "naver_webtoon",
+      "external_id": "769209",
+      "source_url": "https://comic.naver.com/webtoon/list?titleId=769209",
+      "verified_on": "2026-11-24",
+      "official_tags": ["무협/사극", "명작", "개그", "세계관", "동양풍판타지", "회귀", "힘숨찐", "판무", "이세계", "먼치킨", "소설원작"],
+      "taste_tags": ["무협/사극", "개그", "동양풍판타지", "회귀", "힘숨찐", "판무", "이세계", "먼치킨"]
+    },
+    {
+      "source_provider": "naver_webtoon",
+      "external_id": "821597",
+      "source_url": "https://comic.naver.com/webtoon/list?titleId=821597",
+      "verified_on": "2026-11-24",
+      "official_tags": ["무협/사극", "천마", "액션", "세계관", "오컬트", "동양풍판타지", "판무", "먼치킨", "소설원작"],
+      "taste_tags": ["무협/사극", "천마", "액션", "오컬트", "동양풍판타지", "판무", "먼치킨"]
+    },
+    {
+      "source_provider": "naver_webtoon",
+      "external_id": "776601",
+      "source_url": "https://comic.naver.com/webtoon/list?titleId=776601",
+      "verified_on": "2026-11-24",
+      "official_tags": ["무협/사극", "사이다", "세계관", "회귀", "판무", "소설원작"],
+      "taste_tags": ["무협/사극", "사이다", "회귀", "판무"]
+    },
+    {
+      "source_provider": "naver_webtoon",
+      "external_id": "828715",
+      "source_url": "https://comic.naver.com/webtoon/list?titleId=828715",
+      "verified_on": "2026-11-24",
+      "official_tags": ["무협/사극", "참교육", "미친작화", "고인물", "타임슬립", "회귀", "판무", "복수극", "먼치킨", "소설원작"],
+      "taste_tags": ["무협/사극", "타임슬립", "회귀", "판무", "복수극", "먼치킨"]
+    },
+    {
+      "source_provider": "naver_webtoon",
+      "external_id": "650305",
+      "source_url": "https://comic.naver.com/webtoon/list?titleId=650305",
+      "verified_on": "2026-11-24",
+      "official_tags": ["판타지", "명작", "세계관", "동양풍판타지", "판무", "동물"],
+      "taste_tags": ["판타지", "동양풍판타지", "판무", "동물"]
+    },
+    {
+      "source_provider": "naver_webtoon",
+      "external_id": "183559",
+      "source_url": "https://comic.naver.com/webtoon/list?titleId=183559",
+      "verified_on": "2026-11-24",
+      "official_tags": ["판타지", "탑등반", "명작", "이능력", "배틀", "모험", "전쟁", "액션", "성장물", "서바이벌", "세계관", "이능력배틀물", "소년왕도물", "먼치킨"],
+      "taste_tags": ["판타지", "탑등반", "이능력", "배틀", "모험", "전쟁", "액션", "성장물", "서바이벌", "이능력배틀물", "소년왕도물", "먼치킨"]
+    }
+  ]
+}
