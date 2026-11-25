@@ -175,6 +175,6 @@ py -m kmas_webtoon_provider --title "기기괴괴" --title "신의 탑" --approv
 
 ### 2026-11-25 공식 카탈로그 응답 오류 분석
 
-문서의 일반 목록 경로를 확인하기 위해 승인된 단일 요청으로 `pageNo=0`과 `pageNo=1`을 별도 조회했다. HTTP 200 JSON 응답이었지만 `resultState=error`이고 `result`에는 `resultState`, `resultMessage`만 있어 `totalCount`와 작품 배열이 없었다. 첫 pageNo=0 파이프라인 요청도 같은 응답을 받았다. 원 응답은 인증키 없이 스키마 요약만 저장했으며, 메시지는 키·검색조건 오류 등 알려진 분류와 일치하지 않는 `other`로만 기록했다. 따라서 공식 ID 0건이며 이 경로에서 추가 페이지 조회를 계속하지 않았다.
+문서의 일반 목록 경로를 확인하기 위해 승인된 단일 요청으로 `pageNo=0`과 `pageNo=1`을 별도 조회했다. HTTP 200 JSON 응답이었지만 `resultState=error`이고 `result`에는 `resultState`, `resultMessage`만 있어 `totalCount`와 작품 배열이 없었다. 첫 pageNo=0 파이프라인 요청도 같은 응답을 받았고, 2000-01-01~2026-11-25 날짜 범위를 지정한 단일 조회도 같은 오류 구조였다. 원 응답은 인증키 없이 스키마 요약만 저장했으며, 메시지는 키·검색조건 오류 등 알려진 분류와 일치하지 않는 `other`로만 기록했다. 대비 확인한 기존 제목 조회 캐시는 HTTP 200, `totalCount` 및 `itemList`를 가진 45행이었지만 `mastrId`는 0행에서 확인됐다. 따라서 이번 목록 경로에서 공식 ID는 0건이며 추가 페이지 조회를 계속하지 않았다.
 
 이 응답은 HTTP 전송 성공과 API 작업 성공을 구분해야 한다. `resolve_kmas_ids.ps1`의 `Read-Page`가 오류 상태를 먼저 검사하도록 고쳐, `totalCount`가 없는 API 오류를 잘못된 카운트 오류로 숨기지 않고 안전한 `UnsuccessfulResponse`로 분류한다. PowerShell 5.1 자체 검증은 26개 assertion을 통과했고 실제 API 재호출은 포함하지 않는다. 정확한 거부 사유는 이 응답 기록만으로 확정할 수 없어 추가 호출이나 import를 진행하지 않았다.
