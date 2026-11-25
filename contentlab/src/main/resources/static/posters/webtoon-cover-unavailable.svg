@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" role="img" aria-labelledby="title description">
+  <title id="title">웹툰 표지 미사용</title>
+  <desc id="description">표지 이미지 사용 권한 확인 전이라 공식 표지를 표시하지 않습니다.</desc>
+  <rect width="600" height="900" fill="#f3eee8"/>
+  <rect x="42" y="42" width="516" height="816" rx="28" fill="#fff" stroke="#d8d0c7" stroke-width="4"/>
+  <circle cx="300" cy="330" r="112" fill="#f1e7d9"/>
+  <path d="M238 352l44-88 37 62 26-35 37 61H238z" fill="#927b62"/>
+  <circle cx="382" cy="276" r="15" fill="#c5975b"/>
+  <text x="300" y="535" text-anchor="middle" font-family="sans-serif" font-size="38" font-weight="700" fill="#40382f">공식 표지 미사용</text>
+  <text x="300" y="590" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#756b60">이미지 이용 권한 확인 중</text>
+  <text x="300" y="780" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#8b8176">AI CONTENT LAB · 권리 확인 전 대체 이미지</text>
+</svg>

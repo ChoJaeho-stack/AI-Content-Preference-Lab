@@ -89,6 +89,9 @@ public class AiRecommendationClient {
                 throw gatewayError();
             }
             boolean webtoon = "webtoon".equals(payload.get("contentType"));
+            if (webtoon && root.has("profile_summary") && !validProfileSummary(root.path("profile_summary"))) {
+                throw gatewayError();
+            }
             var webtoonIds = new HashSet<Long>();
             for (JsonNode item : recommendations) {
                 JsonNode id = item.path("id");
@@ -100,9 +103,12 @@ public class AiRecommendationClient {
                         || score.asInt() < 0 || score.asInt() > 100) {
                     throw gatewayError();
                 }
+                JsonNode personalFit = item.path("personal_fit_score");
                 if (webtoon && (!"webtoon".equals(item.path("type").asString())
                         || !webtoonIds.add(id.asLong()) || item.path("title").asString().isBlank()
-                        || !item.path("reason").isString() || item.path("reason").asString().isBlank())) {
+                        || !item.path("reason").isString() || item.path("reason").asString().isBlank()
+                        || (item.has("personal_fit_score") && (!personalFit.isIntegralNumber()
+                            || !personalFit.canConvertToInt() || personalFit.asInt() != score.asInt())))) {
                     throw gatewayError();
                 }
             }
@@ -110,6 +116,23 @@ public class AiRecommendationClient {
         } catch (JacksonException | IllegalArgumentException error) {
             throw gatewayError();
         }
+    }
+
+    private static boolean validProfileSummary(JsonNode summary) {
+        if (!summary.isObject()) {
+            return false;
+        }
+        for (JsonNode dimension : summary) {
+            if (!dimension.isObject()) {
+                return false;
+            }
+            for (JsonNode weight : dimension) {
+                if (!weight.isNumber() || !(weight.asDouble() >= -1 && weight.asDouble() <= 1)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static RestClient createClient(Duration connectTimeout, Duration readTimeout) {

@@ -72,6 +72,11 @@ public List<ContentResponse> getSimilarContents(
         return Map.of("count", contentService.getCount());
     }
 
+    @PostMapping("/api/webtoons/recommend")
+    public Map<String, Object> recommendWebtoonGuest(@RequestBody Map<String, Object> request) {
+        return contentService.recommendWebtoonGuest(request);
+    }
+
     @PostMapping("/api/recommend")
 public Map recommend(
         @RequestBody Map<String, String> request,

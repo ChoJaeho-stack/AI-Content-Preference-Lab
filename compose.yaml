@@ -1,0 +1,65 @@
+x-runtime: &runtime
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  web:
+    <<: *runtime
+    image: "${CONTENTLAB_WEB_IMAGE:-contentlab-web:local}"
+    build: ./contentlab
+    ports:
+      - "127.0.0.1:${CONTENTLAB_WEB_PORT:-18080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: "prod"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://${DB_HOST:?Set DB_HOST for a prepared database}:${DB_PORT:-3306}/${DB_NAME:?Set DB_NAME for a prepared database}${CONTENTLAB_JDBC_PARAMS:-}"
+      SPRING_DATASOURCE_USERNAME: "${DB_USER:?Set DB_USER for a prepared database}"
+      DB_PASSWORD: "${DB_PASSWORD:?Set DB_PASSWORD}"
+      JWT_SECRET: "${JWT_SECRET:?Set an approved JWT_SECRET}"
+      CONTENTLAB_AI_RECOMMEND_URL: "http://ai:8000/recommend"
+      CONTENTLAB_CACHE_ENABLED: "${CONTENTLAB_CACHE_ENABLED:-false}"
+      SPRING_DATA_REDIS_URL: "${SPRING_DATA_REDIS_URL:-redis://localhost:6379}"
+    depends_on:
+      ai:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -ec
+        - |
+          exec 3<>/dev/tcp/127.0.0.1/8080
+          printf 'GET /api/health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3
+          read -r version status reason <&3
+          test "$$status" = 200
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+  ai:
+    <<: *runtime
+    image: "${CONTENTLAB_AI_IMAGE:-contentlab-ai:local}"
+    build:
+      context: .
+      dockerfile: Dockerfile.ai
+    environment:
+      DB_HOST: "${DB_HOST:?Set DB_HOST for a prepared database}"
+      DB_PORT: "${DB_PORT:-3306}"
+      DB_NAME: "${DB_NAME:?Set DB_NAME for a prepared database}"
+      DB_USER: "${DB_USER:?Set DB_USER for a prepared database}"
+      DB_PASSWORD: "${DB_PASSWORD:?Set DB_PASSWORD}"
+      DB_SSL_CA: "${DB_SSL_CA:-}"
+      CONTENTLAB_AI_MODE: "${CONTENTLAB_AI_MODE:-gemini}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health', timeout=2).close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

@@ -46,6 +46,41 @@ class RecommendationEndToEndTests {
     }
 
     @Test
+    void favoritesAreIdempotentAndScopedByMemberAndContentType(
+            @Autowired WebApplicationContext context, @Autowired FilterChainProxy security) throws Exception {
+        MockMvc mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(security).build();
+        String first = bearer(createMember(mvc, "favorite-first"));
+        String second = bearer(createMember(mvc, "favorite-second"));
+
+        mvc.perform(get("/api/favorites")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/favorites/movie/1")).andExpect(status().isUnauthorized());
+        mvc.perform(delete("/api/favorites/movie/1")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/favorites/webtoon/1").header("Authorization", first))
+                .andExpect(status().isNotFound());
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mvc.perform(post("/api/favorites/movie/1").header("Authorization", first))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.favorite").value(true));
+        }
+        mvc.perform(post("/api/favorites/tv/1").header("Authorization", first))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/favorites/movie/1").header("Authorization", second))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/favorites").header("Authorization", first))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            mvc.perform(delete("/api/favorites/movie/1").header("Authorization", first))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.favorite").value(false));
+        }
+        mvc.perform(get("/api/favorites").header("Authorization", first))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].type").value("tv")).andExpect(jsonPath("$[0].rating").value(8.0));
+        mvc.perform(get("/api/favorites").header("Authorization", second))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].type").value("movie"));
+    }
+
+    @Test
     void realMembersGetSeparateRecommendationsAndCanOnlyAccessTheirOwnHistory(
             @Autowired WebApplicationContext context, @Autowired FilterChainProxy security) throws Exception {
         MockMvc mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(security).build();
@@ -86,6 +121,82 @@ class RecommendationEndToEndTests {
                 .andExpect(status().isNotFound());
         mvc.perform(get("/api/history").header("Authorization", bearer(secondToken)))
                 .andExpect(jsonPath("$[0].id").value(secondHistory));
+        mvc.perform(delete("/api/history/{id}", secondHistory).header("Authorization", bearer(secondToken)))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/history").header("Authorization", bearer(secondToken)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
+        mvc.perform(get("/api/history").header("Authorization", bearer(firstToken)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void loginCookieSupportsSessionAndRememberedModesAndLogoutClearsIt(
+            @Autowired WebApplicationContext context, @Autowired FilterChainProxy security)
+            throws Exception {
+        MockMvc mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(security).build();
+        String email = "cookie-" + UUID.randomUUID() + "@e2e.invalid";
+        String password = UUID.randomUUID().toString();
+        String registration = JSON.writeValueAsString(Map.of(
+                "email", email, "nickname", "Cookie tester", "password", password));
+        mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                .content(registration)).andExpect(status().isCreated());
+
+        String rememberedBody = JSON.writeValueAsString(Map.of(
+                "email", email, "password", password, "rememberMe", true));
+        var remembered = mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON).content(rememberedBody))
+                .andExpect(status().isOk()).andReturn().getResponse();
+        var persistentCookie = remembered.getCookie("CONTENTLAB_AUTH");
+        assertTrue(persistentCookie.isHttpOnly());
+        assertTrue(remembered.getHeader("Set-Cookie").contains("SameSite=Lax"));
+        assertTrue(remembered.getHeader("Set-Cookie").contains("Max-Age=2592000"));
+        assertTrue(!remembered.getContentAsString().contains("token"));
+        mvc.perform(get("/api/me").cookie(persistentCookie)).andExpect(status().isOk());
+
+        mvc.perform(post("/api/auth/logout").cookie(persistentCookie))
+                .andExpect(status().isNoContent())
+                .andExpect(header().string("Set-Cookie",
+                        org.hamcrest.Matchers.containsString("Max-Age=0")));
+        mvc.perform(get("/api/me").cookie(persistentCookie))
+                .andExpect(status().isUnauthorized());
+
+        String sessionBody = JSON.writeValueAsString(Map.of(
+                "email", email, "password", password, "rememberMe", false));
+        var sessionLogin = mvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON).content(sessionBody))
+                .andExpect(status().isOk()).andReturn().getResponse();
+        assertTrue(!sessionLogin.getHeader("Set-Cookie").contains("Max-Age="),
+                "unchecked automatic login must receive a browser-session cookie");
+    }
+
+    @Test
+    void contentRatingsAreScopedAndUpdatableForEveryCatalogType(
+            @Autowired WebApplicationContext context, @Autowired FilterChainProxy security) throws Exception {
+        MockMvc mvc = MockMvcBuilders.webAppContextSetup(context).addFilters(security).build();
+        String first = bearer(createMember(mvc, "rating-first"));
+        String second = bearer(createMember(mvc, "rating-second"));
+
+        for (var content : List.of(Map.of("type", "movie", "id", 1),
+                Map.of("type", "tv", "id", 1), Map.of("type", "webtoon", "id", 501))) {
+            String type = (String) content.get("type");
+            int id = (int) content.get("id");
+            mvc.perform(put("/api/me/ratings").header("Authorization", first)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(JSON.writeValueAsString(Map.of("type", type, "id", id, "rating", 4))))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.rating").value(4));
+            mvc.perform(put("/api/me/ratings").header("Authorization", first)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(JSON.writeValueAsString(Map.of("type", type, "id", id, "rating", 2))))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.rating").value(2));
+            mvc.perform(get("/api/me/ratings/{type}/{id}", type, id).header("Authorization", first))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.rating").value(2));
+            mvc.perform(get("/api/me/ratings/{type}/{id}", type, id).header("Authorization", second))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.rating").value(org.hamcrest.Matchers.nullValue()));
+        }
+        mvc.perform(put("/api/me/ratings").header("Authorization", first)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(JSON.writeValueAsString(Map.of("type", "movie", "id", 1, "rating", 6))))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -124,10 +235,14 @@ class RecommendationEndToEndTests {
         String body = JSON.writeValueAsString(credentials);
         mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());
-        return JSON.readTree(mvc.perform(post("/api/auth/login")
+        var response = mvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
-                .get("token").asString();
+                .andExpect(status().isOk()).andReturn().getResponse();
+        String cookie = response.getCookie("CONTENTLAB_AUTH").getValue();
+        assertTrue(!response.getContentAsString().contains("token"),
+                "JWT must not be returned to browser JavaScript");
+        assertTrue(response.getCookie("CONTENTLAB_AUTH").isHttpOnly());
+        return cookie;
     }
 
     private static ResultActions recommend(MockMvc mvc, String token) throws Exception {
@@ -165,6 +280,15 @@ class RecommendationEndToEndTests {
                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                           PRIMARY KEY (member_id, content_id, content_type))
                         """, """
+                        CREATE TEMPORARY TABLE revoked_auth_tokens (
+                          token_hash CHAR(64) PRIMARY KEY, expires_at DATETIME(6) NOT NULL)
+                        """, """
+                        CREATE TEMPORARY TABLE member_content_ratings (
+                          member_id BIGINT, content_id BIGINT, content_type VARCHAR(20), rating TINYINT,
+                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                          PRIMARY KEY (member_id, content_id, content_type))
+                        """, """
                         CREATE TEMPORARY TABLE recommendation_history (
                           id BIGINT AUTO_INCREMENT PRIMARY KEY, member_id BIGINT NOT NULL,
                           liked TEXT, disliked TEXT, preference VARCHAR(255), result JSON NOT NULL,
@@ -172,10 +296,12 @@ class RecommendationEndToEndTests {
                         """, """
                         INSERT INTO contents (id, type, title, genre_ids, ott) VALUES
                           (1, 'movie', 'Comedy favorite', '[12,14,16,18,28,35]', '[]'),
+                          (1, 'tv', 'TV favorite', '[]', '[]'),
                           (2, 'movie', 'Horror favorite', '[27]', '[]'),
                           (3, 'movie', 'Second comedy favorite', '[35]', '[]'),
                           (11, 'movie', 'Comedy candidate', '[35]', '[]'),
-                          (12, 'movie', 'Horror candidate', '[27]', '[]')
+                          (12, 'movie', 'Horror candidate', '[27]', '[]'),
+                          (501, 'webtoon', 'Rating webtoon fixture', '[14]', '[]')
                         """)) {
                     statement.execute(sql);
                 }

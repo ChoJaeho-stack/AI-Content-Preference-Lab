@@ -48,6 +48,8 @@ import static org.mockito.Mockito.when;
         "spring.jpa.show-sql=false",
         "spring.data.redis.host=127.0.0.1",
         "spring.data.redis.port=16379",
+        "spring.data.redis.connect-timeout=3s",
+        "spring.data.redis.timeout=3s",
         "spring.data.redis.database=4",
         "contentlab.cache.enabled=false"
 })

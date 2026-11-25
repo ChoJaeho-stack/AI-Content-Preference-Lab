@@ -9,8 +9,10 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
+import java.sql.ResultSet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
@@ -54,6 +56,28 @@ class TasteProfileIsolationTests {
         verify(service).saveSurvey(11L, survey);
         verify(service).saveFeedback(22L, "webtoon", 501L, -1);
         verifyNoMoreInteractions(service);
+    }
+
+    @Test
+    void ratingReadUsesMemberAndContentKeysAndRetainsNeutralRating() throws Exception {
+        var jdbc = mock(JdbcTemplate.class);
+        when(jdbc.queryForObject(contains("information_schema.tables"), eq(Integer.class))).thenReturn(5);
+        var rated = mock(ResultSet.class);
+        when(rated.next()).thenReturn(true);
+        when(rated.getInt("rating")).thenReturn(0);
+        var unrated = mock(ResultSet.class);
+        when(unrated.next()).thenReturn(false);
+        String ratingQuery = "WHERE member_id=? AND content_type=? AND content_id=?";
+        when(jdbc.query(contains(ratingQuery),
+                org.mockito.ArgumentMatchers.<ResultSetExtractor<Integer>>any(), eq(11L), eq("webtoon"), eq(501L)))
+                .thenAnswer(invocation -> invocation.<ResultSetExtractor<Integer>>getArgument(1).extractData(rated));
+        when(jdbc.query(contains(ratingQuery),
+                org.mockito.ArgumentMatchers.<ResultSetExtractor<Integer>>any(), eq(22L), eq("webtoon"), eq(501L)))
+                .thenAnswer(invocation -> invocation.<ResultSetExtractor<Integer>>getArgument(1).extractData(unrated));
+        var controller = new TasteProfileController(new TasteProfileService(jdbc));
+
+        assertEquals(Integer.valueOf(0), controller.getFeedback("webtoon", 501L, auth(11L)).rating());
+        assertNull(controller.getFeedback("webtoon", 501L, auth(22L)).rating());
     }
 
     private static JwtAuthenticationToken auth(long memberId) {

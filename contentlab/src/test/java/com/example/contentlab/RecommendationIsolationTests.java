@@ -30,6 +30,35 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class RecommendationIsolationTests {
     @Test
+    void guestWebtoonPreviewUsesOnlyCurrentSurveyAndNeverLoadsOrSavesMemberData() {
+        var jdbc = mock(JdbcTemplate.class);
+        var histories = mock(RecommendationHistoryRepository.class);
+        var builder = RestClient.builder();
+        var server = MockRestServiceServer.bindTo(builder).build();
+        var endpoint = URI.create("http://127.0.0.1:8000/recommend");
+        var controller = new ContentController(
+                new ContentService(mock(ContentRepository.class), histories, jdbc,
+                        new AiRecommendationClient(endpoint, builder.build())),
+                mock(CatalogCache.class));
+        when(jdbc.queryForObject(contains("information_schema.tables"), eq(Integer.class))).thenReturn(5);
+        server.expect(requestTo(endpoint))
+                .andExpect(content().json("""
+                        {"taste":"guest","contentType":"webtoon","publicPreview":true,
+                         "tasteProfile":{"dimensions":{"genres":{"fantasy":1.0},"story":{},"mood":{},"pacing":{}}}}
+                        """, org.springframework.test.json.JsonCompareMode.STRICT))
+                .andRespond(withSuccess("{\"taste_analysis\":\"preview\",\"recommendations\":[]}", MediaType.APPLICATION_JSON));
+
+        assertEquals("preview", controller.recommendWebtoonGuest(Map.of(
+                "taste", "guest", "survey", Map.of("genres", List.of(" Fantasy ", "fantasy")),
+                "memberId", 12, "contentType", "movie", "tasteProfile", Map.of("spoofed", true)
+        )).get("taste_analysis"));
+        server.verify();
+        verify(jdbc).queryForObject(contains("information_schema.tables"), eq(Integer.class));
+        verifyNoMoreInteractions(jdbc);
+        verifyNoInteractions(histories);
+    }
+
+    @Test
     void sendsStoredWebtoonTasteAndReturnsFiveRankedCardsInUpstreamOrder() {
         var jdbc = mock(JdbcTemplate.class);
         var histories = mock(RecommendationHistoryRepository.class);

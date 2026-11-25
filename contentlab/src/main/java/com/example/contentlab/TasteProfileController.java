@@ -36,6 +36,12 @@ public class TasteProfileController {
         return service.saveFeedback(memberId(auth), feedback.type(), feedback.id(), feedback.rating());
     }
 
+    @GetMapping("/api/me/taste/evaluations/{type}/{id}")
+    public FeedbackResponse getFeedback(@PathVariable("type") String type, @PathVariable("id") long id,
+            JwtAuthenticationToken auth) {
+        return new FeedbackResponse(service.getFeedback(memberId(auth), type, id));
+    }
+
     @DeleteMapping("/api/me/taste/evaluations/{type}/{id}")
     public Map<String, Object> deleteFeedback(@PathVariable String type, @PathVariable long id,
             JwtAuthenticationToken auth) {
@@ -48,4 +54,6 @@ public class TasteProfileController {
     }
 
     public record FeedbackRequest(String type, long id, int rating) {}
+
+    public record FeedbackResponse(Integer rating) {}
 }

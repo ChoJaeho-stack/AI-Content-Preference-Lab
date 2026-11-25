@@ -237,6 +237,36 @@ private java.util.Set<Integer> parseGenres(String genres) {
 
   
         
+    public Map<String, Object> recommendWebtoonGuest(Map<String, Object> request) {
+        Map<String, Object> payload = new HashMap<>();
+        for (String field : List.of("taste", "liked", "disliked", "preference")) {
+            Object raw = request.get(field);
+            if (raw == null) continue;
+            if (!(raw instanceof String value) || value.length() > 1000) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "취향 입력 형식을 확인해주세요.");
+            }
+            payload.put(field, value);
+        }
+        payload.putIfAbsent("taste", "웹툰 추천");
+        Object survey = request.get("survey");
+        if (survey != null) {
+            if (!(survey instanceof Map<?, ?> values)) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "취향 설문 형식을 확인해주세요.");
+            }
+            Map<String, Object> dimensions = new HashMap<>();
+            for (String dimension : List.of("genres", "story", "mood", "pacing")) {
+                dimensions.put(dimension, values.get(dimension));
+            }
+            payload.put("tasteProfile", TasteProfileService.previewProfile(dimensions));
+        }
+        WebtoonSchemaGuard.requireReady(personalizationJdbc);
+        payload.put("contentType", "webtoon");
+        payload.put("publicPreview", true);
+        return recommendationClient.recommend(payload);
+    }
+
 public Map<String, Object> recommend(Map<String, String> request, Long memberId) {
     String taste = request.get("taste");
     if (taste == null || taste.isBlank()) {

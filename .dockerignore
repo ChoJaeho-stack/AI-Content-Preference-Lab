@@ -1,0 +1,7 @@
+**
+!Dockerfile.ai
+!requirements-container.txt
+!ai_server.py
+!database.py
+!webtoon_personalization.py
+!kmas_webtoon_provider.py

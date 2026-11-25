@@ -43,7 +43,7 @@ class WebtoonRedisIntegrationTests {
         var config = new RedisStandaloneConfiguration("127.0.0.1", 16379);
         config.setDatabase(12);
         var connection = new LettuceConnectionFactory(config,
-                LettuceClientConfiguration.builder().commandTimeout(Duration.ofMillis(300)).build());
+                LettuceClientConfiguration.builder().commandTimeout(Duration.ofSeconds(3)).build());
         connection.afterPropertiesSet();
         try {
             var redis = new StringRedisTemplate(connection);

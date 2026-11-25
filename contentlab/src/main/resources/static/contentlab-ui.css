@@ -1,0 +1,814 @@
+:root {
+    color-scheme: dark;
+    --canvas: #0c131b;
+    --surface: #151f2b;
+    --field: #101923;
+    --ink: #f3f7fa;
+    --quiet: #aab9c8;
+    --stroke: #2b3c4d;
+    --mint: #91e6c5;
+    --mint-hover: #b4f3db;
+    --accent-ink: #10251f;
+    --radius: 20px;
+}
+
+body, body.mode-result {
+    --bg: var(--canvas);
+    --card: var(--surface);
+    --input: var(--field);
+    --text: var(--ink);
+    --muted: var(--quiet);
+    --line: var(--stroke);
+    --accent: var(--mint);
+    --accent-hover: var(--mint-hover);
+    --green: var(--mint);
+    --header: rgba(12, 19, 27, 0.94);
+    font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+    line-height: 1.5;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+
+[hidden] { display: none !important; }
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--mint);
+    outline-offset: 3px;
+}
+
+.wrap { width: min(1240px, calc(100% - 56px)); }
+.header-inner { min-height: 76px; }
+.logo { flex: none; }
+.logo-mark { background: var(--mint); color: var(--accent-ink); }
+.logo strong { font-size: 14px; letter-spacing: 0.11em; }
+.logo small { color: var(--quiet); }
+.header nav { justify-content: flex-end; align-items: center; gap: 5px; }
+.header nav > button, .cl-member-actions button { min-height: 42px; padding: 8px 12px; white-space: nowrap; }
+.header nav > button[aria-current], .header nav > button:hover { background: #223849; color: var(--mint); }
+.cl-member-actions { gap: 5px; margin: 0 0 0 7px; }
+.cl-member-actions button { border-color: var(--stroke); background: var(--field); }
+.cl-member-actions .cl-primary { background: var(--mint); color: var(--accent-ink); border-color: transparent; }
+#clUserLabel { max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--quiet); }
+
+#analyze {
+    background: radial-gradient(ellipse at 12% 6%, #213847 0%, transparent 53%), var(--canvas);
+}
+
+.hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.86fr);
+    gap: clamp(26px, 6vw, 92px);
+    align-items: start;
+    padding: clamp(54px, 8vw, 116px) 0;
+}
+
+.hero-copy, .form-card { width: 100%; margin: 0; min-width: 0; }
+.hero-copy { padding-top: clamp(10px, 3vw, 38px); }
+.hero-copy .lead { max-width: 32ch; }
+
+h1 {
+    font-size: clamp(36px, 5.5vw, 74px);
+    font-weight: 800;
+    letter-spacing: -0.075em;
+    line-height: 1.14;
+    text-wrap: balance;
+}
+
+.eyebrow { font-size: 12px; font-weight: 800; color: var(--mint); letter-spacing: 0.16em; }
+.lead { font-size: clamp(15px, 1.5vw, 18px); color: var(--quiet); line-height: 1.75; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.hero-form-title { margin: 0 0 18px; font-size: clamp(20px, 2.2vw, 28px); letter-spacing: -0.045em; }
+
+.form-card, #searchForm, .detail-card, .insight, .cl-modal-panel {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.2);
+}
+
+.form-card { padding: clamp(18px, 3.2vw, 36px); }
+.form-card label, #searchForm label { color: var(--ink); font-size: 14px; }
+
+input, select, .cl-modal-panel input {
+    border: 1px solid var(--stroke);
+    border-radius: 10px;
+    background-color: var(--field);
+    color: var(--ink);
+    padding: 12px 14px;
+    min-height: 48px;
+}
+
+.cl-modal-panel input[type="checkbox"] { min-height: auto; width: auto; margin: 0; }
+input::placeholder { color: #93a6b8; }
+input:focus, select:focus { border-color: var(--mint); box-shadow: 0 0 0 3px #91e6c526; }
+select { appearance: auto; background-image: none; }
+
+#webtoonSurvey {
+    margin: 0 0 14px;
+    padding: 16px 14px 2px;
+    background: #101a24;
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+}
+
+#webtoonSurvey input { margin-bottom: 14px; }
+.survey-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+
+.webtoon-demo-notice {
+    background: #222c34;
+    border-color: #3b4c59;
+    color: #c3d3de;
+    border-radius: 10px;
+    padding: 10px 13px;
+    line-height: 1.55;
+}
+
+.recommendation-fallback-notice {
+    margin: 0 0 14px;
+    padding: 11px 14px;
+    border: 1px solid #7c663b;
+    border-radius: 10px;
+    background: #302819;
+    color: #f2d9a4;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.recommendation-source-badge {
+    display: inline-block;
+    margin: 0 0 6px;
+    padding: 2px 7px;
+    border: 1px solid #7c663b;
+    border-radius: 999px;
+    color: #f2d9a4;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+#explore .webtoon-demo-notice { margin-top: 16px; }
+
+#recommendButton, #againButton, .search-action, .cl-modal-submit {
+    min-height: 46px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: var(--mint);
+    color: var(--accent-ink);
+    font-weight: 800;
+    box-shadow: none;
+}
+
+#recommendButton:hover:not(:disabled), #againButton:hover, .search-action:hover:not(:disabled),
+.cl-modal-submit:hover, .cl-member-actions .cl-primary:hover {
+    background: var(--mint-hover);
+    color: var(--accent-ink);
+    transform: none;
+}
+
+.loading, .status { width: 100%; color: var(--ink); background: var(--field); box-shadow: none; }
+.loading p { color: var(--ink); }
+.loading .loading-copy { color: var(--quiet); }
+.spinner { border-color: var(--stroke); border-top-color: var(--mint); }
+.status { color: #ffb1b7; text-align: start; }
+
+.results, #explore, #detailView { padding: clamp(28px, 5vw, 72px) 0 72px; }
+.results-head { align-items: center; margin-bottom: 24px; }
+.results-head h2, #result > h2 { letter-spacing: -0.055em; }
+#result > h2 { margin: 26px 0 16px; }
+.insight { border-left: 3px solid var(--mint); padding: 18px clamp(16px, 2.5vw, 26px); }
+.insight p { color: var(--quiet); }
+.grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+
+.tile, #exploreGrid .tile, .similar-grid .tile {
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+    color: var(--ink);
+    background: var(--surface);
+    min-width: 0;
+}
+
+.tile { display: flex; flex-direction: column; }
+.tile-body { display: flex; flex: 1; flex-direction: column; padding: 15px; }
+.tile:hover, #exploreGrid .tile:hover, .similar-grid .tile:hover { box-shadow: 0 15px 28px #0005; transform: translateY(-3px); }
+.poster, #exploreGrid .poster, .detail-card .poster, .similar-grid .poster { background: #172635; }
+.tile .poster { position: relative; width: 100%; }
+.poster:has(.generated-cover) { container-type: inline-size; }
+.generated-cover {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 6%;
+    width: 100%;
+    height: 100%;
+    padding: 10%;
+    color: #fff;
+    background:
+        radial-gradient(ellipse at 105% 10%, hsl(var(--cover-hue) 54% 41%), transparent 75%),
+        linear-gradient(var(--cover-angle), hsl(var(--cover-hue) 57% 12%), hsl(var(--cover-hue) 46% 24%));
+    overflow: hidden;
+}
+
+.generated-cover::before, .generated-cover::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.generated-cover::before {
+    width: 92%;
+    aspect-ratio: 1;
+    top: 3%;
+    right: -35%;
+    border: 1px solid #ffffffa0;
+    box-shadow: 0 0 0 12px #ffffff12, 0 0 0 24px #ffffff0d;
+    transform: rotate(var(--cover-angle));
+    border-radius: 26%;
+}
+
+.generated-cover::after {
+    inset: 0;
+    background: linear-gradient(transparent 25%, rgb(0 0 0 / 38%) 100%);
+}
+
+.generated-cover-label {
+    align-self: flex-start;
+    color: #eff7f5;
+    font-size: clamp(9px, 5.7cqi, 14px);
+    font-weight: 700;
+    letter-spacing: 0.11em;
+}
+
+.generated-cover-title {
+    font-size: clamp(13px, 12.5cqi, 42px);
+    font-weight: 800;
+    letter-spacing: -0.055em;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.detail-card .poster { width: 100%; }
+.tile:hover img { transform: scale(1.025); }
+.tile-title, #exploreGrid .tile-title, .similar-grid .tile-title { color: var(--ink); line-height: 1.35; }
+.meta, .reason, .empty, #exploreGrid .meta, #exploreGrid .reason, .similar-grid .meta { color: var(--quiet); }
+.bar { background: #374958; }
+.score { color: var(--mint); }
+.recommendation-detail { margin-top: auto; }
+.reason + .recommendation-detail { margin-top: 12px; }
+
+.detail-back, .cl-favorite-btn, .feedback-actions button, .cl-modal-panel button:not(.cl-modal-submit) {
+    background: #1a2937;
+    color: var(--ink);
+    border: 1px solid #40576a;
+    border-radius: 9px;
+}
+
+.detail-back:hover, .cl-favorite-btn:hover, .feedback-actions button:hover,
+.cl-modal-panel button:not(.cl-modal-submit):hover { border-color: var(--mint); }
+.detail-back { min-height: 44px; }
+.cl-favorite-btn { min-height: 44px; }
+.cl-favorite-btn.active { color: #ffb6cb; background: #402333; border-color: #be718e; }
+.feedback-actions { gap: 8px; }
+.feedback-actions button { min-height: 44px; padding: 8px 13px; cursor: pointer; }
+.feedback-actions button[aria-pressed="true"] { background: #203e39; color: var(--mint); border-color: var(--mint); }
+.feedback-actions button:disabled, .cl-favorite-btn:disabled { opacity: 0.65; cursor: wait; }
+
+#searchForm { padding: clamp(16px, 3vw, 26px); margin: 22px 0; }
+#searchStatus { color: var(--quiet); }
+#exploreGrid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr)); gap: 16px; }
+#pager .search-action { background: #1a2937; color: var(--ink); border-color: var(--stroke); }
+
+.detail-card {
+    align-items: start;
+    grid-template-columns: minmax(140px, min(30%, 310px)) minmax(0, 1fr);
+    gap: clamp(22px, 5vw, 62px);
+    padding: clamp(18px, 4vw, 42px);
+}
+
+.detail-card h2 { margin: 8px 0 12px; line-height: 1.2; letter-spacing: -0.06em; }
+.detail-card .cl-favorite-btn { width: auto; min-width: 110px; }
+.detail-tag { background: #243947; color: #c5e7dd; font-size: 13px; }
+.detail-overview { color: #d2dee7; }
+.member-star-rating { max-width: 430px; }
+.member-star-rating button { background: #263a49; color: #c5d3db; }
+.member-star-rating button[aria-pressed="true"] { background: #4b3c21; color: #ffd786; }
+
+.cl-modal { background: #070d15ce; }
+.cl-modal-panel { width: min(480px, 100%); max-height: min(88vh, 840px); overscroll-behavior: contain; }
+#clFavoritesModal .cl-modal-panel, #clHistoryModal .cl-modal-panel { width: min(620px, 100%); }
+.cl-modal-panel h2 { margin-top: 0; letter-spacing: -0.045em; }
+.cl-modal-panel button { min-height: 44px; }
+.cl-modal-panel .cl-modal-close { width: auto; padding: 6px 12px; }
+.cl-modal-panel .cl-modal-back { margin: 0 8px 12px 0; }
+.cl-modal-message, #clFavoritesMessage, #clHistoryMessage { color: var(--quiet); }
+.cl-favorite-item { border-bottom-color: var(--stroke); }
+.cl-favorite-item img { width: 50px; height: 72px; flex: none; }
+.cl-favorite-info { color: var(--quiet); }
+.cl-favorite-info strong { color: var(--ink); }
+.favorite-title { text-align: start; font-weight: 750; }
+.cl-favorite-item .poster, .history-work .poster {
+    position: relative;
+    width: 50px;
+    height: 75px;
+    flex: 0 0 50px;
+    aspect-ratio: auto;
+    overflow: hidden;
+    align-self: flex-start;
+    border-radius: 7px;
+}
+.cl-favorite-genres { margin: 4px 0 0; color: var(--quiet); font-size: 12px; line-height: 1.35; }
+.cl-favorite-item .generated-cover-label, .history-work .generated-cover-label { display: none; }
+.cl-favorite-item .generated-cover-title, .history-work .generated-cover-title { font-size: 9px; }
+.history-entry, .history-work { border-color: var(--stroke); }
+
+#result .tile { position: relative; }
+.recommendation-rank {
+    position: static;
+    display: inline-grid;
+    place-items: center;
+    width: max-content;
+    min-width: 29px;
+    height: 29px;
+    margin: 0 0 8px;
+    padding-inline: 7px;
+    border-radius: 8px;
+    background: #0b151c;
+    color: #effcf5;
+    font-size: 14px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+.library-feedback {
+    position: fixed;
+    z-index: 80;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 32px);
+    width: max-content;
+    margin: 0;
+    padding: 10px 16px;
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
+    background: #1d3232;
+    color: #effcf5;
+    box-shadow: 0 8px 28px #0008;
+}
+.history-entry {
+    margin-block: 10px;
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
+}
+.history-entry > summary { padding: 12px; cursor: pointer; }
+.history-entry > summary time { display: block; margin: 4px 0 0 17px; color: var(--muted); font-size: 12px; }
+.history-content { padding: 0 12px 12px; }
+.history-work {
+    display: flex;
+    gap: 12px;
+    align-items: start;
+    padding: 10px 0;
+    border-top: 1px solid var(--stroke);
+}
+.history-work-info { min-width: 0; }
+.history-work .reason { margin-block: 4px; font-size: 13px; }
+.history-delete { margin-top: 12px; }
+.favorite-title { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+
+@media (max-width: 1100px) {
+    .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 940px) {
+    .header-inner { flex-wrap: wrap; gap: 8px; padding: 11px 0; }
+    .header nav { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
+}
+
+@media (max-width: 720px) {
+    .wrap { width: calc(100% - 32px); }
+    .hero { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 38px 0 55px; }
+    .hero-copy { padding-top: 0; }
+    .hero-copy h1 { max-width: none; text-wrap: initial; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .results-head { align-items: stretch; }
+    .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #exploreGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .detail-card { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    .detail-card .poster { max-width: 220px; justify-self: center; }
+}
+
+@media (max-width: 470px) {
+    .header-inner { padding: 8px 0; }
+    .header nav { row-gap: 4px; }
+    .header nav > button, .cl-member-actions button { padding: 6px 8px; min-height: 44px; font-size: 13px; }
+    .cl-member-actions { flex-basis: 100%; margin: 0; gap: 4px; }
+    #clUserLabel { max-width: 11ch; }
+    .search-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .search-row .search-action { padding: 10px 14px; }
+    .grid { grid-template-columns: minmax(0, 1fr); }
+    .grid .tile { display: grid; grid-template-columns: minmax(88px, 34%) minmax(0, 1fr); }
+    .grid .tile .poster { align-self: start; }
+    .tile-body { padding: 12px; }
+    .reason { font-size: 13px; }
+}
+
+@media (max-width: 360px) {
+    .wrap { width: calc(100% - 24px); }
+    .survey-grid, .filters { grid-template-columns: minmax(0, 1fr); }
+}
+
+.generated-cover[data-cover-pattern] {
+    --cover-light: hsl(var(--cover-accent, var(--cover-hue)) 78% 69%);
+    --cover-base: hsl(var(--cover-hue) 52% 17%);
+    --cover-dark: hsl(var(--cover-hue) 56% 8%);
+}
+
+.generated-cover[data-cover-pattern]::before {
+    inset: 0;
+    width: auto;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+}
+
+.generated-cover[data-cover-pattern="orbit"] {
+    background: radial-gradient(ellipse at 72% 32%, var(--cover-base), var(--cover-dark) 72%);
+}
+
+.generated-cover[data-cover-pattern="orbit"]::before {
+    background:
+        radial-gradient(circle at 70% 39%, #fff4d3 1%, var(--cover-light) 2% 6%, transparent 7%),
+        repeating-radial-gradient(ellipse at 70% 39%, transparent 0 10%, var(--cover-light) 11% 11.6%, transparent 12.5% 20%);
+}
+
+.generated-cover[data-cover-pattern="rays"] {
+    background: conic-gradient(from 238deg at 61% 84%, var(--cover-dark), var(--cover-base), var(--cover-dark));
+}
+
+.generated-cover[data-cover-pattern="rays"]::before {
+    background: repeating-conic-gradient(from 246deg at 61% 84%, transparent 0deg 12deg, var(--cover-light) 14deg 17deg, transparent 19deg 29deg);
+    opacity: .72;
+}
+
+.generated-cover[data-cover-pattern="steps"] {
+    background: linear-gradient(142deg, var(--cover-dark), var(--cover-base));
+}
+
+.generated-cover[data-cover-pattern="steps"]::before {
+    background: repeating-linear-gradient(90deg, var(--cover-light) 0 10%, transparent 10% 13%);
+    clip-path: polygon(0 76%, 21% 76%, 21% 59%, 42% 59%, 42% 42%, 63% 42%, 63% 25%, 82% 25%, 82% 8%, 100% 8%, 100% 100%, 0 100%);
+    opacity: .62;
+}
+
+.generated-cover[data-cover-pattern="waves"] {
+    background: linear-gradient(118deg, var(--cover-base), var(--cover-dark) 80%);
+}
+
+.generated-cover[data-cover-pattern="waves"]::before {
+    inset: -45% -55% -28% -23%;
+    background: repeating-radial-gradient(ellipse 57% 40% at 0% 53%, transparent 0 12%, var(--cover-light) 13% 15%, transparent 17% 25%);
+    transform: rotate(-22deg);
+    opacity: .68;
+}
+
+.generated-cover[data-cover-pattern="grid"] {
+    background: radial-gradient(ellipse at 80% 24%, var(--cover-base), var(--cover-dark) 85%);
+}
+
+.generated-cover[data-cover-pattern="grid"]::before {
+    inset: -20% -10%;
+    background:
+        linear-gradient(var(--cover-light) 1px, transparent 1px) 47% 50% / 13% 20%,
+        linear-gradient(90deg, var(--cover-light) 1px, transparent 1px) 47% 50% / 13% 20%,
+        radial-gradient(ellipse at 68% 37%, var(--cover-light), transparent 37%);
+    mask-image: linear-gradient(132deg, transparent 12%, black 47%);
+    transform: rotate(-20deg);
+    opacity: .75;
+}
+
+.results-head:has(+ .webtoon-results) { margin-bottom: 12px; }
+.webtoon-results > .insight { padding: 12px 16px; }
+.webtoon-results > .insight p { margin-block: 0; }
+.webtoon-results > .insight p + p { margin-top: 4px; }
+.webtoon-results > .meta,
+.webtoon-results > .webtoon-demo-notice { margin: 7px 0; }
+.webtoon-results > .webtoon-demo-notice {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--quiet);
+    font-size: 12px;
+}
+#result.webtoon-results > h2 { margin: 17px 0 9px; }
+
+.webtoon-recommendation-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 12px;
+}
+
+.webtoon-recommendation-grid .tile {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-radius: 13px;
+    background: linear-gradient(155deg, #192b38 0%, #13202a 74%);
+}
+
+.webtoon-recommendation-grid .tile:hover {
+    transform: none;
+    border-color: #526775;
+}
+
+.webtoon-recommendation-grid .recommendation-first,
+.webtoon-recommendation-grid .recommendation-first:hover {
+    border-color: var(--mint);
+    box-shadow: 0 0 0 1px #91e6c52e, 0 10px 22px #0005;
+}
+
+.webtoon-recommendation-grid .poster {
+    display: none;
+}
+
+.webtoon-cover-placeholder {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    border: 1px dashed #526775;
+    background: #172635;
+    color: var(--quiet);
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.webtoon-cover-placeholder-label { color: var(--ink); font-size: 14px; font-weight: 700; }
+.webtoon-cover-placeholder-note { font-size: 12px; font-weight: 400; }
+
+.webtoon-recommendation-grid .tile-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 11px;
+}
+
+.webtoon-recommendation-grid .recommendation-rank {
+    width: auto;
+    min-width: 34px;
+    height: 26px;
+    padding-inline: 6px;
+    border: 1px solid #ffffff40;
+    border-radius: 7px;
+    background: #0b151cf2;
+    font-size: 12px;
+}
+
+.webtoon-recommendation-grid .recommendation-first .recommendation-rank {
+    background: var(--mint);
+    border-color: transparent;
+    color: var(--accent-ink);
+}
+
+.webtoon-recommendation-grid .tile-title {
+    display: block;
+    min-height: 0;
+    margin: 0 0 4px;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    font-size: 16px;
+    line-height: 1.4;
+}
+.webtoon-card-genre {
+    min-height: 2.7em;
+    margin: 0 0 10px;
+    padding: 7px 9px;
+    border: 1px solid #344b59;
+    border-radius: 8px;
+    background: #101c25;
+    color: var(--quiet);
+    font-size: 12px;
+}
+.recommendation-card-genre { margin: 4px 0 8px; color: var(--quiet); font-size: 13px; line-height: 1.4; }
+.webtoon-genre-unavailable { color: var(--quiet); border: 1px dashed #526775; }
+
+.webtoon-recommendation-grid .score {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2px 6px;
+    margin: 0;
+    padding-top: 8px;
+    border-top: 1px solid var(--stroke);
+    font-variant-numeric: tabular-nums;
+}
+
+.webtoon-recommendation-grid .score span { color: var(--quiet); font-size: 11px; }
+.webtoon-recommendation-grid .score strong { color: var(--mint); font-size: 22px; line-height: 1.1; }
+.webtoon-recommendation-grid .score-unavailable strong { color: var(--quiet); font-size: 14px; }
+.webtoon-recommendation-grid .bar { margin: 5px 0 9px; height: 3px; }
+.webtoon-recommendation-grid .bar.score-unavailable { background: #374958; }
+.webtoon-card-reason {
+    display: -webkit-box;
+    min-height: 4.2em;
+    margin: 8px 0 12px;
+    padding-left: 9px;
+    overflow: hidden;
+    border-left: 2px solid var(--mint);
+    color: #d3e4e3;
+    font-size: 12px;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.webtoon-card-actions { display: flex; align-items: stretch; gap: 5px; margin-top: auto; }
+.webtoon-card-actions button {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 0;
+    height: 48px;
+    min-height: 48px;
+    margin: 0;
+    padding: 5px;
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+}
+
+.webtoon-card-actions .recommendation-detail {
+    border: 1px solid #4d776d;
+    border-radius: 9px;
+    background: #213d39;
+    color: #d8fff1;
+}
+
+.webtoon-card-actions .recommendation-detail:hover { background: #2d5149; border-color: var(--mint); }
+.webtoon-official-link {
+    gap: 6px;
+    color: var(--mint);
+    background: #213d39;
+    border: 1px solid #4d776d;
+}
+.webtoon-official-link:hover { background: #2d5149; color: var(--mint-hover); }
+.webtoon-recommendation-grid .webtoon-official-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 36px;
+    min-height: 36px;
+    margin-top: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+.webtoon-recommendation-grid .webtoon-card-more { margin-top: 3px; }
+.webtoon-card-more { margin-top: 5px; }
+.webtoon-card-more > summary {
+    display: list-item;
+    min-height: 28px;
+    padding: 5px 0;
+    color: var(--quiet);
+    font-size: 12px;
+    cursor: pointer;
+}
+.webtoon-card-more > summary:hover { color: var(--mint); }
+.webtoon-card-more > .reason { margin: 3px 0 8px; font-size: 12px; }
+.webtoon-card-more .feedback-actions { display: flex; flex-wrap: wrap; }
+
+@media (max-width: 960px) {
+    .webtoon-recommendation-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+    .webtoon-recommendation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .webtoon-recommendation-grid .tile-body { padding: 9px; }
+    .webtoon-recommendation-grid .tile-title { font-size: 15px; }
+}
+
+@media (max-width: 349px) {
+    .webtoon-recommendation-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* All recommendation types share the same portrait-cover card anatomy.
+   Webtoon art is intentionally CSS-only and never fetches third-party images. */
+.webtoon-recommendation-grid .tile {
+    border-radius: 14px;
+    background: var(--surface);
+}
+.webtoon-recommendation-grid .tile:hover { transform: translateY(-3px); }
+.webtoon-recommendation-grid .recommendation-first,
+.webtoon-recommendation-grid .recommendation-first:hover {
+    border-color: var(--stroke);
+    box-shadow: none;
+}
+.webtoon-recommendation-grid .poster {
+    display: block;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border-bottom: 1px solid var(--stroke);
+}
+.webtoon-recommendation-grid .tile-body { padding: 15px; }
+.webtoon-recommendation-grid .tile-title { min-height: 0; }
+.webtoon-generated-cover {
+    --cover-ink: #f3f4f6;
+    --cover-accent: #a5b4fc;
+    --cover-tone-start: #202b3b;
+    --cover-tone-end: #111922;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 10%;
+    isolation: isolate;
+    overflow: hidden;
+    color: var(--cover-ink);
+    background:
+        radial-gradient(ellipse at 84% 19%, color-mix(in srgb, var(--cover-accent) 38%, transparent), transparent 57%),
+        linear-gradient(155deg, var(--cover-tone-start), var(--cover-tone-end) 78%);
+}
+.webtoon-generated-cover::before,
+.webtoon-generated-cover::after,
+.webtoon-cover-orbit { position: absolute; pointer-events: none; }
+.webtoon-generated-cover::before {
+    content: "";
+    z-index: -1;
+    width: 78%;
+    aspect-ratio: 1;
+    top: 8%;
+    right: -22%;
+    border: 1px solid color-mix(in srgb, var(--cover-accent) 76%, white);
+    border-radius: 42% 58% 61% 39%;
+    box-shadow: 0 0 0 12px color-mix(in srgb, var(--cover-accent) 12%, transparent),
+                0 0 0 25px color-mix(in srgb, var(--cover-accent) 8%, transparent);
+    transform: rotate(-22deg);
+}
+.webtoon-generated-cover::after {
+    content: "";
+    z-index: -1;
+    inset: 0;
+    background: linear-gradient(transparent 24%, rgb(0 0 0 / 66%));
+}
+.webtoon-cover-orbit {
+    z-index: -1;
+    width: 45%;
+    aspect-ratio: 1;
+    top: 26%;
+    left: 9%;
+    border: 1px solid color-mix(in srgb, var(--cover-accent) 42%, transparent);
+    border-radius: 50%;
+}
+.webtoon-cover-label {
+    align-self: flex-start;
+    padding: 5px 7px;
+    border: 1px solid color-mix(in srgb, var(--cover-accent) 54%, transparent);
+    border-radius: 999px;
+    background: rgb(8 14 20 / 72%);
+    color: var(--cover-ink);
+    font-size: clamp(8px, 2.6vw, 10px);
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.webtoon-cover-title {
+    color: var(--cover-ink);
+    font-size: clamp(15px, 3.3vw, 27px);
+    font-weight: 850;
+    letter-spacing: -.045em;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+.webtoon-cover-genre {
+    color: color-mix(in srgb, var(--cover-accent) 78%, white);
+    font-size: clamp(10px, 2.5vw, 13px);
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+.webtoon-generated-cover[data-theme="fantasy"] { --cover-accent: #8ee3c0; --cover-tone-start: #17453a; --cover-tone-end: #101e20; }
+.webtoon-generated-cover[data-theme="action"] { --cover-accent: #ffb36b; --cover-tone-start: #583221; --cover-tone-end: #201716; }
+.webtoon-generated-cover[data-theme="romance"] { --cover-accent: #ff9fc4; --cover-tone-start: #552b4c; --cover-tone-end: #21151e; }
+.webtoon-generated-cover[data-theme="suspense"] { --cover-accent: #b1a2ff; --cover-tone-start: #33305e; --cover-tone-end: #171727; }
+.webtoon-generated-cover[data-theme="comedy"] { --cover-accent: #f4d06f; --cover-tone-start: #514323; --cover-tone-end: #211d15; }
+.webtoon-generated-cover[data-theme="drama"] { --cover-accent: #82c8e8; --cover-tone-start: #264d61; --cover-tone-end: #15202a; }
+.webtoon-generated-cover[data-theme="general"] { --cover-accent: #bcc7d1; }
+
+@media (max-width: 470px) {
+    .webtoon-recommendation-grid .tile {
+        display: grid;
+        grid-template-columns: minmax(88px, 34%) minmax(0, 1fr);
+    }
+    .webtoon-recommendation-grid .tile .poster { align-self: start; }
+    .webtoon-recommendation-grid .tile-body { padding: 12px; }
+}

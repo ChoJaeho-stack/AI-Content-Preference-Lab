@@ -40,7 +40,7 @@ public class TasteProfileService {
     @Transactional
     public Map<String, Object> saveSurvey(long memberId, Map<String, Object> request) {
         lockMember(memberId);
-        Map<String, Object> survey = normalizeSurvey(request);
+        Map<String, List<String>> survey = normalizeSurvey(request);
         String encoded = writeJson(survey);
         jdbc.update("""
                 INSERT INTO member_taste_surveys(member_id, survey) VALUES (?, ?)
@@ -70,6 +70,17 @@ public class TasteProfileService {
                 ON DUPLICATE KEY UPDATE rating=VALUES(rating), updated_at=CURRENT_TIMESTAMP
                 """, memberId, contentId, type, rating);
         return rebuild(memberId);
+    }
+
+    public Integer getFeedback(long memberId, String type, long contentId) {
+        if (!"webtoon".equals(type) || contentId <= 0) {
+            throw new ResponseStatusException(BAD_REQUEST, "유효한 웹툰 작품 ID를 입력해 주세요.");
+        }
+        WebtoonSchemaGuard.requireReady(jdbc);
+        return jdbc.query("""
+                SELECT rating FROM member_content_feedback
+                WHERE member_id=? AND content_type=? AND content_id=?
+                """, rs -> rs.next() ? rs.getInt("rating") : null, memberId, type, contentId);
     }
 
     @Transactional
@@ -154,8 +165,18 @@ public class TasteProfileService {
         }
     }
 
-    private Map<String, Object> normalizeSurvey(Map<String, Object> request) {
-        Map<String, Object> survey = new LinkedHashMap<>();
+    static Map<String, Object> previewProfile(Map<String, Object> request) {
+        Map<String, Map<String, Double>> dimensions = new LinkedHashMap<>();
+        normalizeSurvey(request).forEach((dimension, values) -> {
+            Map<String, Double> scores = new TreeMap<>();
+            values.forEach(value -> scores.put(value, 1.0));
+            dimensions.put(dimension, scores);
+        });
+        return Map.of("dimensions", dimensions);
+    }
+
+    private static Map<String, List<String>> normalizeSurvey(Map<String, Object> request) {
+        Map<String, List<String>> survey = new LinkedHashMap<>();
         for (String dimension : DIMENSIONS) {
             Object raw = request.get(dimension);
             List<String> values = new ArrayList<>();

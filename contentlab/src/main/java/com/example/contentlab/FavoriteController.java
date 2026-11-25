@@ -51,7 +51,7 @@ public class FavoriteController {
             JwtAuthenticationToken auth) {
         return jdbc.queryForList("""
             SELECT c.id, c.type, c.title, c.rating,
-                   c.poster_url, c.ott
+                   c.poster_url, c.ott, c.genre_ids
             FROM favorites f
             JOIN contents c
               ON c.id = f.content_id

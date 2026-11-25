@@ -65,9 +65,10 @@ class AiRecommendationClientTests {
         server.verify();
     }
 
-    @Test
-    void mapsUpstreamOverloadWithoutForwardingItsBody() {
-        server.expect(requestTo(ENDPOINT)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+    @ParameterizedTest
+    @ValueSource(ints = {429, 503})
+    void mapsUpstreamOverloadWithoutForwardingItsBody(int status) {
+        server.expect(requestTo(ENDPOINT)).andRespond(withStatus(HttpStatus.valueOf(status))
                 .body("private upstream detail"));
         var error = assertThrows(ResponseStatusException.class, () -> client.recommend(REQUEST));
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, error.getStatusCode());
@@ -85,12 +86,21 @@ class AiRecommendationClientTests {
             """,
             """
             {"id":2,"type":"webtoon","title":"Missing reason","match_score":80}
+            """,
+            """
+            {"id":2,"type":"webtoon","title":"Fixture","match_score":80,"personal_fit_score":"80","reason":"Fantasy"}
+            """,
+            """
+            {"id":2,"type":"webtoon","title":"Fixture","match_score":80,"personal_fit_score":81,"reason":"Fantasy"}
+            """,
+            """
+            {"id":2,"type":"webtoon","title":"Fixture","match_score":80,"personal_fit_score":101,"reason":"Fantasy"}
             """
     })
     void rejectsInvalidWebtoonCardsBeforeSavingHistory(String invalidCard) {
         server.expect(requestTo(ENDPOINT)).andRespond(withSuccess("""
                 {"taste_analysis":"ok","recommendations":[
-                  {"id":1,"type":"webtoon","title":"Fixture","match_score":80,"reason":"Fantasy"},
+                  {"id":1,"type":"webtoon","title":"Fixture","match_score":80,"personal_fit_score":80,"reason":"Fantasy"},
                   %s
                 ]}
                 """.formatted(invalidCard), MediaType.APPLICATION_JSON));
@@ -102,6 +112,35 @@ class AiRecommendationClientTests {
                 Map.of("taste", "fantasy", "contentType", "webtoon"), 11L));
         assertEquals(HttpStatus.BAD_GATEWAY, error.getStatusCode());
         verify(history, never()).save(any());
+        server.verify();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"[]", "{\"genres\":[]}", "{\"genres\":{\"fantasy\":\"1\"}}",
+            "{\"genres\":{\"fantasy\":1.1}}"})
+    void rejectsInvalidWebtoonProfileSummary(String summary) {
+        server.expect(requestTo(ENDPOINT)).andRespond(withSuccess("""
+                {"taste_analysis":"ok","recommendations":[],"profile_summary":%s}
+                """.formatted(summary), MediaType.APPLICATION_JSON));
+        var error = assertThrows(ResponseStatusException.class,
+                () -> client.recommend(Map.of("contentType", "webtoon")));
+        assertEquals(HttpStatus.BAD_GATEWAY, error.getStatusCode());
+        server.verify();
+    }
+
+    @Test
+    void acceptsValidOptionalWebtoonFields() {
+        server.expect(requestTo(ENDPOINT)).andRespond(withSuccess("""
+                {"taste_analysis":"ok","profile_summary":{"genres":{"fantasy":0.5}},"recommendations":[
+                  {"id":1,"type":"webtoon","title":"Fixture","match_score":80,"personal_fit_score":80,"reason":"Fantasy"},
+                  {"id":2,"type":"webtoon","title":"Fixture 2","match_score":70,"reason":"Fantasy"}
+                ]}
+                """, MediaType.APPLICATION_JSON));
+        var response = client.recommend(Map.of("contentType", "webtoon"));
+        assertEquals(Map.of("genres", Map.of("fantasy", 0.5)), response.get("profile_summary"));
+        var recommendations = (List<?>) response.get("recommendations");
+        assertEquals(80, ((Map<?, ?>) recommendations.getFirst()).get("personal_fit_score"));
+        assertFalse(((Map<?, ?>) recommendations.getLast()).containsKey("personal_fit_score"));
         server.verify();
     }
 

@@ -29,6 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "contentlab.cache.enabled=true",
         "spring.data.redis.host=127.0.0.1",
         "spring.data.redis.port=16379",
+        "spring.data.redis.connect-timeout=3s",
+        "spring.data.redis.timeout=3s",
         "spring.datasource.hikari.read-only=true",
         "spring.jpa.hibernate.ddl-auto=none",
         "spring.sql.init.mode=never"

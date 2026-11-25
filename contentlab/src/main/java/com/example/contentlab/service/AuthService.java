@@ -53,7 +53,8 @@ public class AuthService {
         return Map.of("message", "Registration successful");
     }
 
-    public Map<String, Object> login(Map<String, String> data) {
+    public Map<String, Object> login(Map<String, String> data,
+                                    boolean rememberMe) {
         String email = data.getOrDefault("email", "").trim()
             .toLowerCase(Locale.ROOT);
         String password = data.getOrDefault("password", "");
@@ -70,10 +71,11 @@ public class AuthService {
 
         Instant now = Instant.now();
 
+        long lifetimeSeconds = rememberMe ? 30L * 24 * 60 * 60 : 12L * 60 * 60;
         var claims = JwtClaimsSet.builder()
             .subject(member.email())
             .issuedAt(now)
-            .expiresAt(now.plusSeconds(3600))
+            .expiresAt(now.plusSeconds(lifetimeSeconds))
             .claim("memberId", member.id())
             .build();
 
@@ -84,6 +86,7 @@ public class AuthService {
 
         return Map.of(
             "token", token,
+            "maxAgeSeconds", lifetimeSeconds,
             "nickname", member.nickname(),
             "email", member.email()
         );

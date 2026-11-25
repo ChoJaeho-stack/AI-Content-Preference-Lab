@@ -346,6 +346,17 @@
 
         }
 
+        .webtoon-demo-notice {
+            margin: 0 0 18px;
+            padding: 14px 16px;
+            border: 1px solid rgba(247, 190, 96, .45);
+            border-radius: 12px;
+            background: #fff7e8;
+            color: #593d17;
+            font-size: .92rem;
+            line-height: 1.6;
+        }
+
 
 
         label {
@@ -359,6 +370,9 @@
             font-weight: 700;
 
         }
+
+        .cl-remember-login { display:flex; align-items:center; gap:9px; margin:10px 0 14px; }
+        .cl-remember-login input { width:auto; margin:0; accent-color:var(--accent); }
 
 
 
@@ -722,6 +736,15 @@
 
         }
 
+        #result .poster-fallback {
+            align-content: center;
+            gap: 10px;
+            background: #22201e;
+            color: #f3eee8;
+        }
+
+        #result .poster-fallback small { color: #d1c6bb; }
+
 
 
         .tile-body { padding: 16px 16px 18px; }
@@ -895,6 +918,18 @@
         #detailView { padding: 40px 0 80px; }
 
         .detail-back { width:auto; padding:12px 20px; background:var(--accent); color:white; cursor:pointer; font-weight:700; margin-bottom:24px; }
+        .feedback-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+        .feedback-actions button { width:auto; padding:6px 10px; }
+        .feedback-actions button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); font-weight:700; }
+        .tile-body, .detail-card > div { min-width:0; }
+        .tile-title, .detail-card h2, .detail-overview, .reason { overflow-wrap:anywhere; }
+        .recommendation-detail { margin-top:8px; min-height:44px; }
+        .webtoon-official-link { display:inline-flex; align-items:center; justify-content:center; min-height:44px; margin-top:8px; padding:10px 14px; border-radius:10px; background:#03c75a; color:#fff; font-weight:700; text-decoration:none; }
+        .webtoon-official-link:hover { background:#02ae4d; }
+        @media (max-width: 420px) {
+            .feedback-actions button { min-height:44px; min-width:52px; }
+            .search-row { grid-template-columns:minmax(0,1fr); }
+        }
 
         .detail-card { background:var(--card); border-radius:24px; padding:28px; display:grid; grid-template-columns:minmax(140px,300px) 1fr; gap:32px; }
 
@@ -903,6 +938,13 @@
         .detail-card h2 { font-size:clamp(28px,5vw,48px); margin:8px 0 16px; }
 
         .detail-rating { color:var(--accent); font-weight:700; font-size:20px; }
+
+        .member-star-rating { margin:18px 0; padding:16px; border:1px solid var(--line); border-radius:14px; }
+        .member-star-rating p { margin:0 0 8px; }
+        .member-star-rating .stars { display:flex; gap:4px; }
+        .member-star-rating button { min-width:44px; min-height:44px; border:0; border-radius:9px; background:#eee9e1; color:#70665c; font-size:22px; cursor:pointer; }
+        .member-star-rating button[aria-pressed="true"] { background:#fff2ca; color:#a86600; }
+        .member-star-rating button:disabled { opacity:.6; cursor:wait; }
 
         .detail-tags { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 24px; }
 
@@ -996,6 +1038,7 @@
     padding:9px 14px;
 }
 </style>
+<link rel="stylesheet" href="/contentlab-ui.css">
 
 </head>
 
@@ -1026,6 +1069,7 @@
             <button type="button" id="navResults">추천</button>
 
         <button type="button" id="navExplore">콘텐츠 탐색</button>
+        <button type="button" id="navRecentWebtoons">최근 본 웹툰</button>
 
             <div class="cl-member-actions">
                 <span id="clUserLabel" hidden></span>
@@ -1040,10 +1084,17 @@
 
 </header>
 
+<dialog id="recentWebtoonsDialog" class="cl-modal-panel" aria-labelledby="recentWebtoonsTitle">
+    <form method="dialog"><button type="submit" class="cl-modal-close">닫기 ✕</button></form>
+    <h2 id="recentWebtoonsTitle">최근 본 웹툰</h2>
+    <p>이 탭에서 최근 열어본 작품입니다.</p>
+    <ul id="recentWebtoonsList"></ul>
+</dialog>
+
 
 
 <div id="clAuthModal" class="cl-modal" hidden>
-    <section class="cl-modal-panel">
+    <section class="cl-modal-panel" role="dialog" aria-modal="true" aria-labelledby="clAuthTitle">
         <button type="button" class="cl-modal-close" data-cl-close="auth">닫기 ✕</button>
         <h2 id="clAuthTitle">로그인</h2>
 
@@ -1052,6 +1103,7 @@
             <input id="clLoginEmail" type="email" required maxlength="255" autocomplete="username">
             <label>비밀번호</label>
             <input id="clLoginPassword" type="password" required autocomplete="current-password">
+            <label class="cl-remember-login"><input id="clRememberMe" type="checkbox"> 자동 로그인 (이 기기에서 30일간 유지)</label>
             <button class="cl-modal-submit" type="submit">로그인</button>
         </form>
 
@@ -1071,14 +1123,16 @@
 </div>
 
 <div id="clFavoritesModal" class="cl-modal" hidden>
-    <section class="cl-modal-panel">
+    <section class="cl-modal-panel" role="dialog" aria-modal="true" aria-labelledby="clFavoritesTitle">
+        <button type="button" class="detail-back cl-modal-back" id="clFavoritesBack">← 이전 화면</button>
         <button type="button" class="cl-modal-close" data-cl-close="favorites">닫기 ✕</button>
-        <h2>♥ 나의 찜 목록</h2>
+        <h2 id="clFavoritesTitle">나의 찜 목록</h2>
         <p id="clFavoritesMessage" role="status">불러오는 중...</p>
         <div id="clFavoritesList"></div>
     </section>
 </div>
 <main>
+    <p id="libraryFeedback" class="library-feedback" role="status" hidden></p>
 
     <section id="analyze" class="view">
 
@@ -1088,15 +1142,19 @@
 
                 <p class="eyebrow">CONTENT LAB</p>
 
-                <h1>당신의 취향을 발견하다.</h1>
+                <h1>다음에 볼 작품을<br>찾아보세요</h1>
 
                 <p class="lead">좋아하는 작품과 피하고 싶은 요소를 알려주시면, AI가 취향에 맞는 콘텐츠를 골라 드립니다.</p>
+                <div class="hero-actions">
+                    <button type="button" id="heroExplore" class="search-action">콘텐츠 탐색 <span aria-hidden="true">↗</span></button>
+                </div>
 
             </div>
 
 
 
             <form class="form-card" id="tasteForm" autocomplete="off">
+                <h2 class="hero-form-title">취향 설문</h2>
 
                 <label for="liked">좋아하는 작품</label>
 
@@ -1120,17 +1178,13 @@
                 </select>
 
                 <div id="webtoonSurvey" hidden>
-                    <label for="tasteGenres">웹툰 선호 장르 (쉼표로 구분)</label>
-                    <input id="tasteGenres" placeholder="예: 판타지, 로맨스">
-
-                    <label for="tasteStory">선호 스토리</label>
-                    <input id="tasteStory" placeholder="예: 성장, 복수">
-
-                    <label for="tasteMood">선호 분위기</label>
-                    <input id="tasteMood" placeholder="예: 따뜻함, 긴장감">
-
-                    <label for="tastePacing">선호 전개 속도</label>
-                    <input id="tastePacing" placeholder="예: 빠른 전개">
+                    <p class="webtoon-demo-notice">원하는 항목만 입력하세요. 여러 취향은 쉼표로 구분할 수 있습니다.</p>
+                    <div class="survey-grid">
+                        <div><label for="tasteGenres">선호 장르</label><input id="tasteGenres" placeholder="예: 판타지, 로맨스"></div>
+                        <div><label for="tasteStory">선호 스토리</label><input id="tasteStory" placeholder="예: 성장, 복수"></div>
+                        <div><label for="tasteMood">선호 분위기</label><input id="tasteMood" placeholder="예: 따뜻함, 긴장감"></div>
+                        <div><label for="tastePacing">선호 전개 속도</label><input id="tastePacing" placeholder="예: 빠른 전개"></div>
+                    </div>
                 </div>
 
                 <button id="recommendButton" type="submit">취향 분석하기</button>
@@ -1193,9 +1247,13 @@
 
             <p class="eyebrow">DISCOVER CONTENT</p>
 
-            <h1>새로운 콘텐츠를 발견하다.</h1>
+            <h1>콘텐츠 탐색</h1>
 
             <p class="lead">작품명과 원하는 조건으로 콘텐츠를 찾아보세요.</p>
+
+            <p id="webtoonCatalogNotice" class="webtoon-demo-notice" hidden>
+                실제 작품은 KMAS 제공으로, 시연용 가상 작품은 가상 웹툰으로 표시합니다.
+            </p>
 
             <form id="searchForm">
 
@@ -1240,6 +1298,8 @@
     </section>
 
 </main>
+<script src="/webtoon-official-links.js"></script>
+<script src="/kmas-original-covers.js"></script>
 
 
 
@@ -1277,10 +1337,18 @@
         pacing: document.getElementById("tastePacing")
     };
     const webtoonSurvey = document.getElementById("webtoonSurvey");
+    let savedSurveyRead = null;
+    const editedSurveyDimensions = new Set();
+    for (const [dimension, input] of Object.entries(tasteDimensionInputs)) {
+        input.addEventListener("input", () => editedSurveyDimensions.add(dimension));
+    }
     function syncWebtoonSurvey() {
         webtoonSurvey.hidden = contentTypeInput.value !== "webtoon";
     }
-    contentTypeInput.addEventListener("change", syncWebtoonSurvey);
+    contentTypeInput.addEventListener("change", () => {
+        syncWebtoonSurvey();
+        void loadSavedSurvey();
+    });
     window.addEventListener("pageshow", syncWebtoonSurvey);
     syncWebtoonSurvey();
 
@@ -1302,6 +1370,56 @@
 
 
 
+    function renderPoster(parent, item, {lazy = true} = {}) {
+        const title = item.title || "제목 없음";
+        const poster = item.poster_url;
+        const isWebtoon = item.type === "webtoon" || poster === "/posters/webtoon-cover-unavailable.svg";
+        if (isWebtoon) {
+            const genres = parseList(item.genre_tags ?? item.genreTags ?? [])
+                .filter(value => typeof value === "string" && value.trim());
+            const genreText = genres.slice(0, 2).join(" · ");
+            const normalizedGenres = genres.join(" ").toLowerCase();
+            const theme = /공포|호러|스릴러|미스터리|오컬트/.test(normalizedGenres) ? "suspense"
+                : /로맨스|연애|순정/.test(normalizedGenres) ? "romance"
+                : /액션|무협|배틀|스포츠/.test(normalizedGenres) ? "action"
+                : /판타지|이세계|사극|동양풍/.test(normalizedGenres) ? "fantasy"
+                : /개그|코미디|일상/.test(normalizedGenres) ? "comedy"
+                : /드라마|학원|성장|휴먼/.test(normalizedGenres) ? "drama" : "general";
+            parent.replaceChildren();
+            const cover = addElement(parent, "div", "", "webtoon-generated-cover");
+            cover.dataset.theme = theme;
+            cover.setAttribute("role", "img");
+            cover.setAttribute("aria-label", `${title} — 자체 제작 대체 표지${genreText ? `, 확인된 장르 ${genreText}` : ", 장르 정보 없음"}`);
+            addElement(cover, "span", "", "webtoon-cover-orbit").setAttribute("aria-hidden", "true");
+            addElement(cover, "span", "자체 제작 대체 표지", "webtoon-cover-label").setAttribute("aria-hidden", "true");
+            addElement(cover, "strong", title, "webtoon-cover-title").setAttribute("aria-hidden", "true");
+            addElement(cover, "span", genreText || "장르 정보 없음", "webtoon-cover-genre").setAttribute("aria-hidden", "true");
+            return;
+        }
+        const fallback = () => {
+            parent.replaceChildren();
+            const cover = addElement(parent, "div", "", "poster-fallback");
+            addElement(cover, "strong", title);
+        };
+
+        if (!poster) {
+            fallback();
+            return;
+        }
+        const image = document.createElement("img");
+        image.alt = title;
+        if (lazy) image.loading = "lazy";
+        image.referrerPolicy = "no-referrer";
+        image.addEventListener("error", fallback, {once: true});
+        image.src = poster;
+        parent.appendChild(image);
+    }
+
+    document.getElementById("heroExplore").addEventListener("click", () => {
+        document.getElementById("navExplore").click();
+        document.getElementById("searchKeyword").focus();
+    });
+
     const tasteWorkspaceKey = "contentlab_taste_workspace_v1";
     const tasteDraftInputs = {liked: likedInput, disliked: dislikedInput,
         type: contentTypeInput, ...tasteDimensionInputs};
@@ -1315,7 +1433,8 @@
             .map(([key, input]) => [key, input.value]));
         try {
             sessionStorage.setItem(tasteWorkspaceKey, JSON.stringify({
-                owner: tasteWorkspaceOwner, draft, recommendation: lastRecommendation, view: tasteView
+                owner: tasteWorkspaceOwner, draft, recommendation: lastRecommendation, view: tasteView,
+                editedSurvey: [...editedSurveyDimensions]
             }));
         } catch {
             // Keep the current page usable if session storage is unavailable.
@@ -1342,6 +1461,11 @@
                 input.value = value;
             }
         }
+        if (Array.isArray(saved.editedSurvey)) {
+            for (const key of saved.editedSurvey) {
+                if (Object.hasOwn(tasteDimensionInputs, key)) editedSurveyDimensions.add(key);
+            }
+        }
         syncWebtoonSurvey();
         if (Array.isArray(saved.recommendation?.recommendations)) {
             renderResults(saved.recommendation);
@@ -1351,6 +1475,8 @@
     }
 
     function clearTasteWorkspace() {
+        savedSurveyRead = null;
+        editedSurveyDimensions.clear();
         tasteWorkspaceOwner = null;
         lastRecommendation = null;
         try { sessionStorage.removeItem(tasteWorkspaceKey); } catch {}
@@ -1362,6 +1488,25 @@
         status.textContent = "";
         setLoading(false);
         showTasteView("analyze");
+    }
+
+    async function loadSavedSurvey() {
+        if (!clUser || webtoonSurvey.hidden || savedSurveyRead) return;
+        const token = clToken;
+        const operation = {};
+        savedSurveyRead = operation;
+        try {
+            const {survey} = await clRequest("/api/me/taste");
+            if (token !== clToken || savedSurveyRead !== operation) return;
+            for (const [dimension, input] of Object.entries(tasteDimensionInputs)) {
+                if (!input.value && !editedSurveyDimensions.has(dimension) && Array.isArray(survey?.[dimension])) {
+                    input.value = survey[dimension].join(", ");
+                }
+            }
+            persistTasteWorkspace();
+        } catch {
+            if (savedSurveyRead === operation) savedSurveyRead = null;
+        }
     }
 
     function setLoading(on) {
@@ -1420,6 +1565,7 @@
             .map(([dimension, input]) => [dimension,
                 input.value.split(",").map(value => value.trim()).filter(Boolean)]));
         const hasSurvey = contentType === "webtoon" && Object.values(survey).some(values => values.length > 0);
+        const surveyNeedsSave = contentType === "webtoon" && (hasSurvey || editedSurveyDimensions.size > 0);
 
 
 
@@ -1448,18 +1594,19 @@
         status.textContent = "";
         persistTasteWorkspace();
         const requestToken = clToken;
+        const guestWebtoon = contentType === "webtoon" && !requestToken;
 
 
 
         try {
 
-            if (hasSurvey) {
+            if (surveyNeedsSave && !guestWebtoon) {
                 const surveyResponse = await fetch("/api/me/taste/survey", {
                     method: "PUT",
                     headers: {
-                        "Content-Type": "application/json",
-                        ...(requestToken ? { "Authorization": `Bearer ${requestToken}` } : {})
+                        "Content-Type": "application/json"
                     },
+                    credentials:"same-origin",
                     body: JSON.stringify(survey)
                 });
                 if (requestToken !== clToken) return;
@@ -1472,16 +1619,19 @@
                             : "웹툰 취향 설문을 저장하지 못했습니다.";
                     return;
                 }
+                savedSurveyRead = {};
+                editedSurveyDimensions.clear();
+                persistTasteWorkspace();
             }
 
-            const response = await fetch("/api/recommend", {
+            const response = await fetch(guestWebtoon ? "/api/webtoons/recommend" : "/api/recommend", {
 
                 method: "POST",
 
                 headers: {
-    "Content-Type": "application/json",
-    ...(requestToken ? { "Authorization": `Bearer ${requestToken}` } : {})
+    "Content-Type": "application/json"
 },
+                credentials: guestWebtoon ? "omit" : "same-origin",
 
                 body: JSON.stringify({
 
@@ -1493,7 +1643,8 @@
 
                     preference: preference,
 
-                    contentType: contentType
+                    contentType: contentType,
+                    ...(guestWebtoon ? {survey} : {})
 
                 })
 
@@ -1519,17 +1670,26 @@
 
 
 
-            const data = await response.json();
+            const data = await response.json().catch(() => null);
             if (requestToken !== clToken) return;
             if (!Array.isArray(data?.recommendations)
-                || data.recommendations.some(item => !item || typeof item !== "object")) {
-                throw new Error("Invalid recommendation response");
+                || data.recommendations.some(item => !item || !Number.isSafeInteger(item.id)
+                    || item.id <= 0 || item.type !== contentType || typeof item.title !== "string"
+                    || !item.title.trim() || !Number.isFinite(item.match_score))) {
+                setLoading(false);
+                status.textContent = "추천 서비스 응답을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.";
+                return;
             }
             const fields = ["id", "type", "title", "poster_url", "personal_fit_score",
-                "match_score", "service_platform", "authors", "rating", "ott", "reason"];
+                "match_score", "service_platform", "authors", "genre_tags", "story_tags",
+                "mood_tags", "pacing", "serial_status", "rating", "ott", "genre_ids", "reason",
+                "source_provider", "external_id", "official_url", "fit_reasons", "official_tags",
+                "recommendation_source"];
             const display = {
                 contentType,
                 taste_analysis: data.taste_analysis,
+                recommendation_source: data.recommendation_source,
+                gemini_recommendation_count: data.gemini_recommendation_count,
                 profile_summary: data.profile_summary,
                 recommendations: data.recommendations.map(item => Object.fromEntries(
                     fields.map(field => [field, item[field]])
@@ -1557,6 +1717,24 @@
     function renderResults(data) {
 
         result.replaceChildren();
+        const recommendations = data.recommendations || [];
+        const isWebtoon = data.contentType === "webtoon"
+            || recommendations[0]?.type === "webtoon";
+        const isLocalFallback = data.recommendation_source === "local_fallback";
+        const isGeminiSupplemented = data.recommendation_source === "gemini_supplemented";
+        result.classList.toggle("webtoon-results", isWebtoon);
+
+        if (isLocalFallback) {
+            addElement(result, "p",
+                "Gemini 응답 장애로 자체 추천으로 전환했습니다. 아래 결과는 등록된 작품 데이터와 취향 점수로 계산했으며 AI 생성 추천이 아닙니다.",
+                "recommendation-fallback-notice");
+        }
+        if (isGeminiSupplemented) {
+            const aiCount = Number(data.gemini_recommendation_count) || 0;
+            addElement(result, "p",
+                `Gemini 추천 ${aiCount}개에 자체 점수 추천을 보충했습니다. 자체 추천 카드에는 별도 표시가 있습니다.`,
+                "recommendation-fallback-notice");
+        }
 
 
 
@@ -1566,7 +1744,8 @@
 
             analysis.className = "insight";
 
-            addElement(analysis, "p", "AI 취향 분석", "eyebrow");
+            addElement(analysis, "p", isLocalFallback ? "자체 추천 알고리즘"
+                : isGeminiSupplemented ? "AI 추천 + 자체 점수 보충" : "AI 취향 분석", "eyebrow");
 
             addElement(analysis, "p", data.taste_analysis);
 
@@ -1575,7 +1754,7 @@
         }
 
         const dimensions = data.profile_summary || {};
-        const dimensionLabels = {genres: "장르", story: "스토리", mood: "분위기", pacing: "전개 속도"};
+        const dimensionLabels = {genres: "장르", story: "스토리", mood: "분위기", pacing: "전개 속도", official_tags: "공식 태그"};
         const profileLabels = Object.entries(dimensions).flatMap(([dimension, values]) =>
             Object.entries(values || {}).filter(([, weight]) => Number(weight) > 0)
                 .map(([feature]) => `${dimensionLabels[dimension] || dimension}: ${feature}`));
@@ -1585,12 +1764,15 @@
 
 
 
-        const recommendations = data.recommendations || [];
-        const isWebtoon = data.contentType === "webtoon"
-            || recommendations[0]?.type === "webtoon";
-
         if (isWebtoon && recommendations.length > 0) {
-            addElement(result, "h2", `웹툰 추천 TOP ${recommendations.length}`);
+            const providers = new Set(recommendations.map(item => item.source_provider || item.sourceProvider));
+            if (providers.size === 1 && (providers.has("contentlab_demo_fictional") || providers.has("contentlab_dev_fixture"))) {
+                addElement(result, "p", "테스트 전용 가상 작품 · 실제 네이버웹툰 작품이 아닙니다.", "webtoon-demo-notice");
+            } else if (providers.size === 1 && providers.has("naver_webtoon")) {
+                addElement(result, "p", "네이버웹툰 공식 작품 정보 · 표지는 이용 권한 확인 전까지 표시하지 않습니다.", "webtoon-demo-notice");
+            } else if (providers.size === 1 && providers.has("kmas")) {
+                addElement(result, "p", "작품 정보 출처 · 만화규장각(KMAS)", "webtoon-demo-notice");
+            }
         }
 
 
@@ -1605,123 +1787,74 @@
 
 
 
+        addElement(result, "h2", `${isWebtoon ? "웹툰 " : ""}추천 TOP ${recommendations.length}`);
         const grid = document.createElement("div");
+        grid.className = isWebtoon ? "grid webtoon-recommendation-grid" : "grid";
 
-        grid.className = "grid";
+        recommendations.forEach((item, index) => {
+            const webtoon = item.type === "webtoon";
+            const card = addElement(grid, "article", "", "tile");
+            if (webtoon && index === 0) card.classList.add("recommendation-first");
+            renderPoster(addElement(card, "div", "", "poster"), item);
 
-
-
-        recommendations.forEach((item) => {
-
-            const card = document.createElement("article");
-
-            card.className = "tile";
-
-
-
-            const poster = document.createElement("div");
-
-            poster.className = "poster";
-
-
-
-            if (item.poster_url) {
-
-                const image = document.createElement("img");
-
-                image.src = item.poster_url;
-
-                image.alt = item.title || "포스터";
-
-                image.loading = "lazy";
-
-                image.referrerPolicy = "no-referrer";
-
-                image.addEventListener("error", () => {
-
-                    poster.replaceChildren();
-
-                    addElement(poster, "div", item.title || "포스터 없음", "poster-fallback");
-
-                });
-
-                poster.appendChild(image);
-
+            const body = addElement(card, "div", "", "tile-body");
+            addElement(body, "span", webtoon ? `${index + 1}위` : String(index + 1), "recommendation-rank");
+            addElement(body, "h3", item.title || "제목 없음", "tile-title");
+            if (webtoon) {
+                const genres = parseList(item.genre_tags);
+                addElement(body, "p", genres.slice(0, 2).join(" · ") || "장르 정보 없음", "webtoon-card-genre");
             } else {
-
-                addElement(poster, "div", item.title || "포스터 없음", "poster-fallback");
-
+                const genres = parseList(item.genre_ids)
+                    .map(id => genreNames[Number(id)])
+                    .filter(Boolean);
+                addElement(body, "p", genres.slice(0, 2).join(" · ") || "장르 정보 없음", "recommendation-card-genre");
             }
 
-
-
-            card.appendChild(poster);
-
-
-
-            const body = document.createElement("div");
-
-            body.className = "tile-body";
-
-
-
-            addElement(body, "h3", item.title || "제목 없음", "tile-title");
-
-
+            if (item.recommendation_source === "local_supplement") {
+                addElement(body, "span", "자체 점수 추천 보충", "recommendation-source-badge");
+            }
 
             const score = Math.min(100, Math.max(0,
                 Number(item.personal_fit_score ?? item.match_score) || 0));
-
-            addElement(body, "p", `취향 일치도 ${score}%`, "score");
-
-
-
-            const bar = document.createElement("div");
-
-            bar.className = "bar";
-
-            const fill = document.createElement("span");
-
-            fill.style.width = `${score}%`;
-
-            bar.appendChild(fill);
-
-            body.appendChild(bar);
-
-
-
-            const ott = Array.isArray(item.ott) ? item.ott.join(", ") : item.ott;
-
-            addElement(
-
-                body,
-
-                "p",
-
-                item.type === "webtoon"
-                    ? ["웹툰", item.service_platform, ...parseList(item.authors)].filter(Boolean).join(" · ")
-                    : `평점 ${item.rating ?? "정보 없음"} · OTT ${ott || "정보 없음"}`,
-
-                "meta"
-
-            );
-
-            addElement(body, "p", item.reason || "", "reason");
-            appendFavoriteButton(body, item);
-
-            if (item.type === "webtoon") {
-                appendWebtoonFeedback(body, item);
+            if (webtoon) {
+                const scoreHasEvidence = Array.isArray(item.fit_reasons)
+                    && item.fit_reasons.some(signal => signal && ["match", "mismatch"].includes(signal.signal));
+                const scoreLine = addElement(body, "p", "", "score");
+                addElement(scoreLine, "span", scoreHasEvidence ? "취향 일치도 " : "취향 근거 없음 ");
+                addElement(scoreLine, "strong", scoreHasEvidence ? `${score}%` : "미산정");
+                if (!scoreHasEvidence) scoreLine.classList.add("score-unavailable");
+            } else {
+                addElement(body, "p", `취향 일치도 ${score}%`, "score");
             }
+            const bar = addElement(body, "div", "", "bar");
+            bar.setAttribute("aria-hidden", "true");
+            const scoreHasEvidence = !webtoon || (Array.isArray(item.fit_reasons)
+                && item.fit_reasons.some(signal => signal && ["match", "mismatch"].includes(signal.signal)));
+            if (!scoreHasEvidence) bar.classList.add("score-unavailable");
+            addElement(bar, "span", "").style.width = `${scoreHasEvidence ? score : 0}%`;
 
+            if (webtoon) {
+                addElement(body, "p", item.reason || "확인된 취향 일치 근거가 없습니다.", "reason webtoon-card-reason");
+                const actions = addElement(body, "div", "", "webtoon-card-actions");
+                appendRecommendationDetailButton(actions, item);
+                appendFavoriteButton(actions, item);
+                appendOfficialWebtoonLink(body, item);
 
-
-            card.appendChild(body);
-
-            grid.appendChild(card);
-
+                const more = addElement(body, "details", "", "webtoon-card-more");
+                addElement(more, "summary", "작품 태그 · 평가");
+                const credits = [item.service_platform, item.serial_status, ...parseList(item.authors)].filter(Boolean);
+                if (credits.length) addElement(more, "p", credits.join(" · "), "meta");
+                const officialTags = parseList(item.official_tags);
+                if (officialTags.length) addElement(more, "p", `공식 태그 · ${officialTags.join(" · ")}`, "meta");
+                appendWebtoonFeedback(more, item);
+            } else {
+                const ott = Array.isArray(item.ott) ? item.ott.join(", ") : item.ott;
+                addElement(body, "p", `평점 ${item.rating ?? "정보 없음"} · OTT ${ott || "정보 없음"}`, "meta");
+                addElement(body, "p", item.reason || "", "reason");
+                appendFavoriteButton(body, item);
+                appendRecommendationDetailButton(body, item);
+            }
         });
-
-
 
         result.appendChild(grid);
 
@@ -1754,6 +1887,7 @@
 
     function syncSearchFilters() {
         const webtoon = el("searchType").value === "webtoon";
+        el("webtoonCatalogNotice").hidden = !webtoon;
         el("searchOttFilter").hidden = webtoon;
         el("searchSortFilter").hidden = webtoon;
         el("searchGenreFilter").hidden = !webtoon;
@@ -1820,16 +1954,16 @@
 
                 poster.addEventListener("keydown",event=>{if(event.key === "Enter" || event.key === " "){event.preventDefault();openDetail(item);}});
 
-                const fallback = () => {poster.replaceChildren();addElement(poster,"div",item.title || "포스터 없음","poster-fallback");};
-
-                if(item.poster_url) { const img = document.createElement("img"); img.alt = item.title || "포스터"; img.loading = "lazy"; img.referrerPolicy = "no-referrer"; img.onerror = fallback; img.src = item.poster_url; poster.appendChild(img); } else fallback();
+                renderPoster(poster, item);
 
                 const body = addElement(card,"div","","tile-body");
 
                 addElement(body,"h3",item.title || "제목 없음","tile-title");
 
                 if (item.type === "webtoon") {
-                    const info = ["웹툰", item.servicePlatform, item.serialStatus, ...parseList(item.authors)].filter(Boolean);
+                    const source = {kmas: "KMAS 제공", contentlab_demo_fictional: "개발용 가상 웹툰",
+                        contentlab_dev_fixture: "개발용 가상 웹툰"}[item.sourceProvider];
+                    const info = ["웹툰", source, item.servicePlatform, item.serialStatus, ...parseList(item.authors)].filter(Boolean);
                     addElement(body, "p", info.join(" · "), "meta");
                     const genres = parseList(item.genreTags);
                     if (genres.length) addElement(body, "p", genres.join(" · "), "meta");
@@ -1875,7 +2009,11 @@
 
 
 
-    let detailRequest = null, exploreScroll = 0;
+    if (!history.state?.contentlabBase && !history.state?.contentlabDetail) {
+        history.replaceState({contentlabBase: true}, "");
+    }
+
+    let detailRequest = null, exploreScroll = 0, detailReturn = returnToExplore;
 
     const genreNames = {12:"모험",14:"판타지",16:"애니메이션",18:"드라마",27:"공포",28:"액션",35:"코미디",36:"역사",37:"서부",53:"스릴러",80:"범죄",99:"다큐멘터리",878:"SF",9648:"미스터리",10402:"음악",10749:"로맨스",10751:"가족",10752:"전쟁",10759:"액션·모험",10762:"어린이",10763:"뉴스",10764:"리얼리티",10765:"SF·판타지",10766:"연속극",10767:"토크",10768:"전쟁·정치",10770:"TV 영화"};
 
@@ -1887,20 +2025,70 @@
 
     }
 
-    function closeDetail() {
+    function closeDetail(keepHistory = false) {
 
         if(detailRequest) detailRequest.abort();
 
         detailRequest = null;
+        if (!keepHistory && history.state?.contentlabDetail) history.replaceState({contentlabBase: true}, "");
 
         el("detailView").hidden = true;
 
     }
 
-    async function openDetail(item) {
+    function returnToExplore() {
+        closeDetail();
+        exploreView.hidden = false;
+        window.scrollTo(0, exploreScroll);
+    }
+
+    const recentWebtoonsKey = "contentlab_recent_webtoons";
+    const recentWebtoonsDialog = el("recentWebtoonsDialog");
+
+    function recentWebtoons() {
+        try {
+            const entries = JSON.parse(sessionStorage.getItem(recentWebtoonsKey));
+            return Array.isArray(entries) ? entries.filter(item =>
+                item && item.type === "webtoon" && /^\d+$/.test(String(item.id))
+                && typeof item.title === "string").slice(0, 20) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function rememberWebtoon(item) {
+        if (item.type !== "webtoon" || !/^\d+$/.test(String(item.id)) || !item.title) return;
+        const id = String(item.id);
+        const entries = recentWebtoons().filter(entry => String(entry.id) !== id);
+        entries.unshift({id, type: "webtoon", title: item.title});
+        try { sessionStorage.setItem(recentWebtoonsKey, JSON.stringify(entries.slice(0, 20))); } catch {}
+    }
+
+    el("navRecentWebtoons").addEventListener("click", () => {
+        const list = el("recentWebtoonsList");
+        list.replaceChildren();
+        const entries = recentWebtoons();
+        if (!entries.length) addElement(list, "li", "아직 열어본 웹툰이 없습니다.");
+        for (const item of entries) {
+            const button = addElement(addElement(list, "li", ""), "button", item.title);
+            button.type = "button";
+            button.addEventListener("click", () => {
+                recentWebtoonsDialog.close();
+                void openDetail(item, () => recentWebtoonsDialog.showModal(), "최근 본 웹툰");
+            });
+        }
+        recentWebtoonsDialog.showModal();
+    });
+
+    async function openDetail(item, returnTo = returnToExplore, label = "콘텐츠 탐색") {
 
         if (!exploreView.hidden) exploreScroll = window.scrollY;
-        closeDetail();
+        closeDetail(true);
+        detailReturn = returnTo;
+        el("detailBack").textContent = `← ${label}`;
+        const detailState = {contentlabDetail: {id: item.id, type: item.type, label}};
+        if (history.state?.contentlabDetail) history.replaceState(detailState, "");
+        else history.pushState(detailState, "");
 
         analyzeView.hidden = true; resultsView.hidden = true; exploreView.hidden = true;
 
@@ -1920,11 +2108,16 @@
             const endpoint = item.type === "webtoon" ? `/api/webtoons/${id}` : `/api/contents/${encodeURIComponent(item.type)}/${id}`;
             const response = await fetch(endpoint, {signal:controller.signal});
 
+            if (item.type === "webtoon" && response.status === 503) {
+                if (detailRequest === controller) target.textContent = "웹툰 상세 정보를 지금 이용할 수 없습니다. 잠시 후 다시 시도해 주세요.";
+                return;
+            }
             if(!response.ok) throw new Error("HTTP " + response.status);
 
             const data = await response.json();
 
             if(detailRequest !== controller) return;
+            rememberWebtoon(data);
 
             target.replaceChildren();
 
@@ -1932,31 +2125,40 @@
 
             const poster=addElement(card,"div","","poster");
 
-            const fallback=()=>{poster.replaceChildren();addElement(poster,"div",data.title || "포스터 없음","poster-fallback");};
-
-            if(data.poster_url){const img=document.createElement("img");img.alt=data.title || "포스터";img.referrerPolicy="no-referrer";img.onerror=fallback;img.src=data.poster_url;poster.appendChild(img);}else fallback();
+            renderPoster(poster, data, {lazy: false});
 
             const info=addElement(card,"div","");
 
-            addElement(info,"p",data.type === "webtoon" ? "웹툰" : data.type === "movie" ? "MOVIE" : "TV CONTENT","eyebrow");
+            addElement(info,"p",data.type === "webtoon" ? "웹툰" : data.type === "movie" ? "영화" : "드라마 · 예능","eyebrow");
 
             addElement(info,"h2",data.title || "제목 없음");
             appendFavoriteButton(info, data);
+            appendContentRating(info, data);
 
             if (data.type === "webtoon") {
+                if (data.sourceProvider === "contentlab_demo_fictional" || data.sourceProvider === "contentlab_dev_fixture") {
+                    addElement(info, "p", "가상 시연 작품 · 실제 네이버웹툰 작품이 아닙니다. 포스터는 자체 제작 이미지입니다.", "webtoon-demo-notice");
+                } else if (data.sourceProvider === "kmas") {
+                    addElement(info, "p", "작품 정보 출처 · 만화규장각(KMAS)", "webtoon-demo-notice");
+                }
                 const authors = parseList(data.authors);
                 if (authors.length) addElement(info, "p", `작가 ${authors.join(" · ")}`, "meta");
                 const release = [data.servicePlatform, data.serialStatus].filter(Boolean);
                 if (release.length) addElement(info, "p", release.join(" · "), "meta");
                 const genres = addElement(info, "div", "", "detail-tags");
-                for (const tag of parseList(data.genreTags)) addElement(genres, "span", tag, "detail-tag");
-                const officialUrl = parseHttpUrl(data.officialUrl);
-                if (officialUrl) {
-                    const link = addElement(info, "a", "공식 연재처에서 보기");
-                    link.href = officialUrl;
-                    link.target = "_blank";
-                    link.rel = "noopener noreferrer";
+                const genreTags = parseList(data.genreTags);
+                if (genreTags.length) {
+                    for (const tag of genreTags) addElement(genres, "span", tag, "detail-tag");
+                } else {
+                    addElement(genres, "span", "장르 정보 없음", "detail-tag webtoon-genre-unavailable");
                 }
+                for (const [field, label] of [["storyTags", "스토리"], ["moodTags", "분위기"]]) {
+                    const values = parseList(data[field]);
+                    if (values.length) addElement(info, "p", `${label} · ${values.join(" · ")}`, "meta");
+                }
+                if (data.pacing) addElement(info, "p", `전개 속도 · ${data.pacing}`, "meta");
+                if (data.sourceProvider === "naver_webtoon") addElement(info, "p", "표지 이미지 이용 권한 확인 전 · 공식 표지를 저장하거나 불러오지 않습니다.", "webtoon-demo-notice");
+                appendOfficialWebtoonLink(info, data);
                 appendWebtoonFeedback(info, data);
             } else {
                 addElement(info,"p",data.rating == null ? "평점 정보 없음" : `★ ${Number(data.rating).toFixed(1)} / 10`,"detail-rating");
@@ -1971,10 +2173,14 @@
                 for(const name of values.length ? values : ["정보 없음"]) addElement(platforms,"span",String(name),"detail-tag");
             }
 
-            addElement(info,"h3","작품 소개");
-
-            addElement(info,"p",data.overview || "줄거리 정보가 없습니다.","detail-overview");
-            loadSimilar(target, data, controller);
+            if (data.type !== "webtoon" || data.sourceProvider === "contentlab_demo_fictional"
+                    || data.sourceProvider === "contentlab_dev_fixture") {
+                addElement(info,"h3","작품 소개");
+                addElement(info,"p",data.overview || "줄거리 정보가 없습니다.","detail-overview");
+            } else if (!data.overview?.trim()) {
+                addElement(info, "p", "줄거리 정보 없음", "detail-overview");
+            }
+            loadSimilar(target, data, controller, returnTo, label);
 
         } catch(error) { if(error.name !== "AbortError" && detailRequest === controller) target.textContent="상세 정보를 불러오지 못했습니다. ("+error.message+")"; }
 
@@ -1989,12 +2195,42 @@
         }
     }
 
-    el("detailBack").addEventListener("click",()=>{closeDetail();exploreView.hidden=false;window.scrollTo(0,exploreScroll);});
+    function appendOfficialWebtoonLink(parent, item) {
+        if (typeof findOfficialWebtoonPage !== "function") return;
+        const page = findOfficialWebtoonPage(item);
+        if (!page) return;
+        const link = addElement(parent, "a", "공식 웹툰 보기", "webtoon-official-link");
+        link.href = page.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        const label = [item.title, "공식 웹툰 보기", page.note, "새 탭"].filter(Boolean).join(" · ");
+        link.setAttribute("aria-label", label);
+        link.title = label;
+        addElement(link, "span", "↗").setAttribute("aria-hidden", "true");
+        if (page.note && parent.closest(".detail-card")) addElement(parent, "p", page.note, "meta");
+    }
+
+    el("detailBack").addEventListener("click", () => {
+        if (history.state?.contentlabDetail) history.back();
+        else detailReturn();
+    });
+    window.addEventListener("popstate", event => {
+        const detail = event.state?.contentlabDetail;
+        if (detail) {
+            if (detail.label === "추천 결과") {
+                openDetail(detail, () => showTasteView("results"), detail.label);
+            } else {
+                openDetail(detail);
+            }
+        } else if (!el("detailView").hidden) {
+            detailReturn();
+        }
+    });
 
 
 
 
-    async function loadSimilar(target, data, controller) {
+    async function loadSimilar(target, data, controller, returnTo, label) {
         const section = addElement(target, "section", "", "similar-section");
         addElement(section, "p", "RELATED CONTENT", "eyebrow");
         addElement(section, "h2", "이 작품과 비슷한 콘텐츠");
@@ -2014,17 +2250,12 @@
                 poster.setAttribute("role", "button");
                 poster.tabIndex = 0;
                 poster.setAttribute("aria-label", (item.title || "작품") + " 상세 정보");
-                poster.addEventListener("click", () => openDetail(item));
+                const openSimilarDetail = () => openDetail(item, returnTo, label);
+                poster.addEventListener("click", openSimilarDetail);
                 poster.addEventListener("keydown", event => {
-                    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openDetail(item); }
+                    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openSimilarDetail(); }
                 });
-                const fallback = () => { poster.replaceChildren(); addElement(poster, "div", item.title || "포스터 없음", "poster-fallback"); };
-                if (item.poster_url) {
-                    const img = document.createElement("img");
-                    img.alt = item.title || "포스터";
-                    img.loading = "lazy"; img.referrerPolicy = "no-referrer";
-                    img.onerror = fallback; img.src = item.poster_url; poster.appendChild(img);
-                } else fallback();
+                renderPoster(poster, item);
                 const body = addElement(card, "div", "", "tile-body");
                 addElement(body, "h3", item.title || "제목 없음", "tile-title");
                 if (item.type === "webtoon") {
@@ -2042,11 +2273,17 @@
 
 // ===== CONTENT LAB MEMBER SYSTEM =====
 
-let clToken = localStorage.getItem("contentlab_token");
+// JWT는 HttpOnly 쿠키에만 보관한다. 이 값은 비밀이 아닌 요청 경합 방지용 세대 표시자다.
+localStorage.removeItem("contentlab_token");
+let clToken = null;
 let clUser = null;
+let clSessionProbe = 0;
+let clSessionGeneration = 0;
 let clFavoriteIds = new Set();
+const clPendingFavorites = new Map();
 let clFavoriteItems = [];
 let clFavoritesRequest = 0;
+let clFavoritesRevision = 0;
 
 const clAuthModal = document.getElementById("clAuthModal");
 const clFavoritesModal = document.getElementById("clFavoritesModal");
@@ -2083,23 +2320,22 @@ function clUpdateUI() {
 }
 
 function clAuthHeaders() {
-    const headers = {};
-    if (clToken) headers.Authorization = `Bearer ${clToken}`;
-    return headers;
+    return {};
 }
 
 async function clRequest(url, options = {}) {
     const headers = new Headers(options.headers || {});
     const token = clToken;
-    if (token) headers.set("Authorization", `Bearer ${token}`);
     if (options.body && !headers.has("Content-Type")) {
         headers.set("Content-Type", "application/json");
     }
 
-    const response = await fetch(url, {...options, headers});
+    const response = await fetch(url, {...options, headers, credentials:"same-origin"});
 
     if (response.status === 401 && token && token === clToken) {
-        clLogout(false);
+        clResetAccount(null);
+        restoreTasteWorkspace("guest");
+        clOpenAuth("login");
         throw new Error("로그인이 만료되었습니다. 다시 로그인해주세요.");
     }
 
@@ -2120,43 +2356,225 @@ function clKey(item) {
     return `${item.type}:${item.id}`;
 }
 
+const clWebtoonRatings = new Map();
+const clPendingWebtoonRatings = new Map();
+const clWebtoonRatingReads = new Map();
+const clContentRatings = new Map();
+const clPendingContentRatings = new Map();
+const clContentRatingReads = new Map();
+
+function appendRecommendationDetailButton(parent, item) {
+    if (!Number.isSafeInteger(item.id) || item.id <= 0) return;
+    const button = addElement(parent, "button", "작품 상세", "recommendation-detail");
+    button.type = "button";
+    button.addEventListener("click", () => openDetail(item, () => showTasteView("results"), "추천 결과"));
+}
+
+async function clLoadContentRating(key) {
+    if (!clUser || clContentRatings.has(key) || clContentRatingReads.has(key)
+            || clPendingContentRatings.has(key)) return;
+    const operation = Symbol();
+    clContentRatingReads.set(key, operation);
+    const [type, id] = key.split(":");
+    try {
+        const {rating} = await clRequest(`/api/me/ratings/${encodeURIComponent(type)}/${encodeURIComponent(id)}`);
+        if (clContentRatingReads.get(key) === operation && !clContentRatings.has(key)
+                && !clPendingContentRatings.has(key)) {
+            clContentRatings.set(key, rating);
+            clUpdateContentRatings();
+        }
+    } catch {
+        // Keep controls usable and retry when the detail is opened again.
+    } finally {
+        if (clContentRatingReads.get(key) === operation) clContentRatingReads.delete(key);
+    }
+}
+
+function clUpdateContentRatings() {
+    document.querySelectorAll("[data-content-rating-key]").forEach(button => {
+        const key = button.dataset.contentRatingKey;
+        const selected = clContentRatings.get(key);
+        button.setAttribute("aria-pressed", String(Number.isInteger(selected)
+            && Number(button.dataset.rating) <= selected));
+        button.disabled = clPendingContentRatings.has(key);
+    });
+}
+
+function appendContentRating(parent, item) {
+    const key = clKey(item);
+    const group = addElement(parent, "div", "", "member-star-rating");
+    group.dataset.contentRatingGroup = key;
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "내 별점 (5점 척도)");
+    addElement(group, "p", "내 별점");
+    const stars = addElement(group, "div", "", "stars");
+    const message = addElement(group, "p", "", "meta");
+    message.setAttribute("role", "status");
+    for (let rating = 1; rating <= 5; rating++) {
+        const button = addElement(stars, "button", "★");
+        button.type = "button";
+        button.dataset.contentRatingKey = key;
+        button.dataset.rating = String(rating);
+        button.setAttribute("aria-label", `별점 ${rating}점`);
+        const selected = clContentRatings.get(key);
+        button.setAttribute("aria-pressed", String(Number.isInteger(selected) && rating <= selected));
+        button.disabled = clPendingContentRatings.has(key);
+        button.addEventListener("click", async () => {
+            if (!clToken || !clUser) { clOpenAuth("login"); return; }
+            if (clPendingContentRatings.has(key)) return;
+            const operation = Symbol();
+            clPendingContentRatings.set(key, operation);
+            clUpdateContentRatings();
+            message.textContent = "";
+            try {
+                await clRequest("/api/me/ratings", {
+                    method: "PUT",
+                    body: JSON.stringify({type: item.type, id: item.id, rating})
+                });
+                if (clPendingContentRatings.get(key) !== operation) return;
+                clContentRatings.set(key, rating);
+                clUpdateContentRatings();
+                message.textContent = `별점 ${rating}점을 저장했습니다.`;
+            } catch (error) {
+                if (clPendingContentRatings.get(key) === operation) message.textContent = error.message;
+            } finally {
+                if (clPendingContentRatings.get(key) === operation) {
+                    clPendingContentRatings.delete(key);
+                    clUpdateContentRatings();
+                }
+            }
+        });
+    }
+    void clLoadContentRating(key);
+}
+
+async function clLoadWebtoonRating(key) {
+    if (!clUser || clWebtoonRatings.has(key) || clWebtoonRatingReads.has(key)
+            || clPendingWebtoonRatings.has(key)) return;
+    const operation = Symbol();
+    clWebtoonRatingReads.set(key, operation);
+    const [type, id] = key.split(":");
+    try {
+        const {rating} = await clRequest(`/api/me/taste/evaluations/${encodeURIComponent(type)}/${encodeURIComponent(id)}`);
+        if (clWebtoonRatingReads.get(key) === operation && !clWebtoonRatings.has(key)
+                && !clPendingWebtoonRatings.has(key)) {
+            clWebtoonRatings.set(key, rating);
+            clUpdateWebtoonRatings();
+        }
+    } catch {
+        // An unavailable lookup leaves the rating editable and can be retried on the next visit.
+    } finally {
+        if (clWebtoonRatingReads.get(key) === operation) clWebtoonRatingReads.delete(key);
+    }
+}
+
+function clUpdateWebtoonRatings() {
+    document.querySelectorAll("[data-webtoon-rating-key]").forEach(button => {
+        const key = button.dataset.webtoonRatingKey;
+        const selected = clWebtoonRatings.get(key);
+        button.setAttribute("aria-pressed", String(selected === Number(button.dataset.rating)));
+        button.disabled = clPendingWebtoonRatings.has(key);
+    });
+}
+
 function appendWebtoonFeedback(parent, item) {
+    const key = clKey(item);
+    addElement(parent, "h3", "내 웹툰 평가");
     const actions = addElement(parent, "div", "", "feedback-actions");
+    actions.dataset.webtoonFeedbackKey = key;
+    actions.setAttribute("role", "group");
+    actions.setAttribute("aria-label", "내 웹툰 평가");
     const message = addElement(parent, "p", "", "meta");
     message.setAttribute("role", "status");
 
-    for (const [rating, label] of [[1, "좋아요"], [0, "보통"], [-1, "싫어요"]]) {
+    for (const [rating, label] of [[-1, "싫어요"], [0, "보통"], [1, "좋아요"]]) {
+        const stars = rating + 2;
         const button = addElement(actions, "button", label);
         button.type = "button";
+        button.setAttribute("aria-label", `${stars}점 (${label})`);
+        button.setAttribute("aria-pressed", String(clWebtoonRatings.get(key) === rating));
+        button.disabled = clPendingWebtoonRatings.has(key);
+        button.dataset.webtoonRatingKey = key;
+        button.dataset.rating = String(rating);
         button.addEventListener("click", async () => {
             if (!clToken || !clUser) {
                 clOpenAuth("login");
                 return;
             }
-            const buttons = actions.querySelectorAll("button");
-            buttons.forEach(control => { control.disabled = true; });
+            if (clPendingWebtoonRatings.has(key)) return;
+            const operation = Symbol();
+            clPendingWebtoonRatings.set(key, operation);
+            clUpdateWebtoonRatings();
             message.textContent = "";
             try {
                 await clRequest("/api/me/taste/evaluations", {
                     method: "PUT",
                     body: JSON.stringify({type: item.type, id: item.id, rating})
                 });
-                message.textContent = `“${label}” 평가를 저장했습니다.`;
+                if (clPendingWebtoonRatings.get(key) !== operation) return;
+                clWebtoonRatings.set(key, rating);
+                clUpdateWebtoonRatings();
+                message.textContent = `${stars}점 (${label}) 평가를 저장했습니다.`;
             } catch (error) {
-                message.textContent = error.message;
+                if (clPendingWebtoonRatings.get(key) === operation) message.textContent = error.message;
             } finally {
-                buttons.forEach(control => { control.disabled = false; });
+                if (clPendingWebtoonRatings.get(key) === operation) {
+                    clPendingWebtoonRatings.delete(key);
+                    clUpdateWebtoonRatings();
+                }
             }
         });
     }
+    void clLoadWebtoonRating(key);
 }
 
 function clUpdateFavoriteButtons() {
     document.querySelectorAll("[data-favorite-key]").forEach(button => {
         const active = clFavoriteIds.has(button.dataset.favoriteKey);
         button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
         button.textContent = active ? "♥ 찜 취소" : "♡ 찜하기";
+        button.disabled = clPendingFavorites.has(button.dataset.favoriteKey);
     });
+    document.querySelectorAll("[data-favorite-remove-key]").forEach(button => {
+        button.disabled = clPendingFavorites.has(button.dataset.favoriteRemoveKey);
+    });
+}
+
+let libraryFeedbackTimer;
+function showLibraryFeedback(text) {
+    const status = document.getElementById("libraryFeedback");
+    clearTimeout(libraryFeedbackTimer);
+    status.hidden = false;
+    status.textContent = text;
+    libraryFeedbackTimer = setTimeout(() => { status.hidden = true; }, 4000);
+}
+
+async function clSaveFavorite(item, removing, onError = showLibraryFeedback) {
+    const key = clKey(item);
+    if (clPendingFavorites.has(key)) return;
+    const operation = Symbol();
+    clPendingFavorites.set(key, operation);
+    clUpdateFavoriteButtons();
+    try {
+        await clRequest(
+            `/api/favorites/${encodeURIComponent(item.type)}/${encodeURIComponent(item.id)}`,
+            {method: removing ? "DELETE" : "POST"}
+        );
+        if (clPendingFavorites.get(key) !== operation) return;
+        clFavoritesRevision++;
+        if (removing) clFavoriteIds.delete(key);
+        else clFavoriteIds.add(key);
+        showLibraryFeedback(removing ? "찜 목록에서 삭제했습니다." : "찜 목록에 저장했습니다.");
+        if (!clFavoritesModal.hidden) await clLoadFavorites();
+    } catch (error) {
+        if (clPendingFavorites.get(key) === operation) onError(error.message);
+    } finally {
+        if (clPendingFavorites.get(key) === operation) {
+            clPendingFavorites.delete(key);
+            clUpdateFavoriteButtons();
+        }
+    }
 }
 
 function appendFavoriteButton(parent, item) {
@@ -2166,7 +2584,9 @@ function appendFavoriteButton(parent, item) {
     button.dataset.favoriteKey = clKey(item);
 
     const active = clFavoriteIds.has(clKey(item));
+    button.disabled = clPendingFavorites.has(button.dataset.favoriteKey);
     button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
     button.textContent = active ? "♥ 찜 취소" : "♡ 찜하기";
 
     button.addEventListener("click", async () => {
@@ -2175,30 +2595,7 @@ function appendFavoriteButton(parent, item) {
             return;
         }
 
-        button.disabled = true;
-        const token = clToken;
-        try {
-            const key = clKey(item);
-            const exists = clFavoriteIds.has(key);
-            const method = exists ? "DELETE" : "POST";
-
-            await clRequest(
-                `/api/favorites/${encodeURIComponent(item.type)}/${encodeURIComponent(item.id)}`,
-                {method}
-            );
-            if (token !== clToken) return;
-
-            if (exists) clFavoriteIds.delete(key);
-            else clFavoriteIds.add(key);
-
-            clUpdateFavoriteButtons();
-
-            if (!clFavoritesModal.hidden) await clLoadFavorites();
-        } catch (error) {
-            if (token === clToken) alert(error.message);
-        } finally {
-            button.disabled = false;
-        }
+        await clSaveFavorite(item, clFavoriteIds.has(clKey(item)));
     });
 
     parent.appendChild(button);
@@ -2209,6 +2606,7 @@ async function clLoadFavorites() {
     const token = clToken;
     if (!token) return;
     const request = ++clFavoritesRequest;
+    const revision = clFavoritesRevision;
     const message = document.getElementById("clFavoritesMessage");
     const list = document.getElementById("clFavoritesList");
 
@@ -2218,8 +2616,23 @@ async function clLoadFavorites() {
     try {
         const items = await clRequest("/api/favorites");
         if (token !== clToken || request !== clFavoritesRequest) return;
+        if (revision !== clFavoritesRevision) return clLoadFavorites();
         clFavoriteItems = Array.isArray(items) ? items : [];
         clFavoriteIds = new Set(clFavoriteItems.map(clKey));
+
+        const favoriteWebtoonGenres = new Map();
+        await Promise.all(clFavoriteItems.filter(item => item.type === "webtoon").map(async item => {
+            try {
+                const response = await fetch(`/api/webtoons/${encodeURIComponent(item.id)}`, {
+                    credentials: "same-origin"
+                });
+                if (!response.ok) return;
+                const detail = await response.json();
+                favoriteWebtoonGenres.set(item.id, parseList(detail.genreTags));
+            } catch (_) {
+                // The favorite itself remains usable if optional webtoon metadata is unavailable.
+            }
+        }));
 
         message.textContent = clFavoriteItems.length
             ? `총 ${clFavoriteItems.length}개의 작품을 찜했습니다.`
@@ -2229,44 +2642,41 @@ async function clLoadFavorites() {
             const row = document.createElement("div");
             row.className = "cl-favorite-item";
 
-            if (item.poster_url) {
-                const img = document.createElement("img");
-                img.src = item.poster_url;
-                img.alt = item.title || "작품 포스터";
-                img.loading = "lazy";
-                row.appendChild(img);
-            }
+            renderPoster(addElement(row, "div", "", "poster"), item);
 
             const info = document.createElement("div");
             info.className = "cl-favorite-info";
 
-            const title = document.createElement("strong");
+            const title = document.createElement("button");
+            title.type = "button";
+            title.className = "favorite-title";
             title.textContent = item.title || "제목 없음";
+            title.addEventListener("click", () => {
+                clFavoritesModal.hidden = true;
+                void openDetail(item, returnToFavorites, "내 찜 목록");
+            });
 
             const type = document.createElement("p");
             type.textContent = item.type === "webtoon" ? "웹툰" : item.type === "movie" ? "영화" : "TV";
 
-            info.append(title, type);
+            const genreLine = document.createElement("p");
+            genreLine.className = "cl-favorite-genres";
+            const genres = item.type === "webtoon"
+                ? favoriteWebtoonGenres.get(item.id) || []
+                : parseList(item.genre_ids).map(id => genreNames[id]).filter(Boolean);
+            genreLine.textContent = genres.join(" · ") || "장르 정보 없음";
+
+            info.append(title, type, genreLine);
             row.appendChild(info);
 
             const remove = document.createElement("button");
             remove.type = "button";
             remove.textContent = "찜 취소";
+            remove.dataset.favoriteRemoveKey = clKey(item);
 
             remove.addEventListener("click", async () => {
                 if (token !== clToken) return;
-                try {
-                    await clRequest(
-                        `/api/favorites/${encodeURIComponent(item.type)}/${encodeURIComponent(item.id)}`,
-                        {method:"DELETE"}
-                    );
-                    if (token !== clToken) return;
-                    clFavoriteIds.delete(clKey(item));
-                    clUpdateFavoriteButtons();
-                    await clLoadFavorites();
-                } catch (error) {
-                    if (token === clToken) alert(error.message);
-                }
+                await clSaveFavorite(item, true, text => { message.textContent = text; });
             });
 
             row.appendChild(remove);
@@ -2280,24 +2690,28 @@ async function clLoadFavorites() {
 }
 
 async function clRestoreSession(nickname) {
-    if (!clToken) {
-        clUpdateUI();
-        restoreTasteWorkspace("guest");
-        return;
-    }
-
-    const token = clToken;
+    const probe = ++clSessionProbe;
     try {
         const me = await clRequest("/api/me");
-        if (token !== clToken) return;
+        if (probe !== clSessionProbe) return;
+        clToken = `authenticated-${++clSessionGeneration}`;
         clUser = {email:me.email, nickname:nickname || me.email};
         clUpdateUI();
         if (Number.isSafeInteger(me.memberId) && me.memberId > 0) {
             restoreTasteWorkspace(String(me.memberId));
         }
+        void loadSavedSurvey();
+        document.querySelectorAll("[data-webtoon-feedback-key]").forEach(group => {
+            void clLoadWebtoonRating(group.dataset.webtoonFeedbackKey);
+        });
+        document.querySelectorAll("[data-content-rating-group]").forEach(group => {
+            void clLoadContentRating(group.dataset.contentRatingGroup);
+        });
         await clLoadFavorites();
     } catch {
-        if (token === clToken) clLogout(false);
+        if (probe !== clSessionProbe) return;
+        if (clToken || clUser) clResetAccount(null);
+        restoreTasteWorkspace("guest");
     }
 }
 
@@ -2308,7 +2722,19 @@ document.getElementById("clLogout").addEventListener("click", () => clLogout(tru
 
 document.getElementById("clFavorites").addEventListener("click", async () => {
     clFavoritesModal.hidden = false;
+    clFavoritesModal.querySelector(".cl-modal-close").focus();
     await clLoadFavorites();
+});
+
+function returnToFavorites() {
+    closeDetail();
+    clFavoritesModal.hidden = false;
+    document.getElementById("clFavoritesBack").focus();
+}
+
+document.getElementById("clFavoritesBack").addEventListener("click", () => {
+    clFavoritesModal.hidden = true;
+    document.getElementById("clFavorites").focus();
 });
 
 document.getElementById("clSwitchAuth").addEventListener("click", () => {
@@ -2329,6 +2755,7 @@ document.getElementById("clLoginForm").addEventListener("submit", async event =>
     const message = document.getElementById("clAuthMessage");
     const email = document.getElementById("clLoginEmail").value;
     const password = document.getElementById("clLoginPassword").value;
+    const rememberMe = document.getElementById("clRememberMe").checked;
 
     message.textContent = "로그인 중...";
 
@@ -2336,7 +2763,8 @@ document.getElementById("clLoginForm").addEventListener("submit", async event =>
         const result = await fetch("/api/auth/login", {
             method:"POST",
             headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({email,password})
+            credentials:"same-origin",
+            body:JSON.stringify({email,password,rememberMe})
         });
 
         if (!result.ok) {
@@ -2346,11 +2774,9 @@ document.getElementById("clLoginForm").addEventListener("submit", async event =>
         }
 
         const data = await result.json();
-        clResetAccount(data.token);
-        localStorage.setItem("contentlab_token", clToken);
-
-        clCloseAuth();
         await clRestoreSession(data.nickname);
+        if (!clUser) throw new Error("로그인 상태를 확인하지 못했습니다. 다시 시도해주세요.");
+        clCloseAuth();
     } catch (error) {
         message.textContent = error.message;
     }
@@ -2383,9 +2809,22 @@ document.getElementById("clRegisterForm").addEventListener("submit", async event
 });
 
 function clResetAccount(token) {
+    clSessionProbe++;
     clToken = token;
     clUser = null;
     clFavoriteIds.clear();
+    clPendingFavorites.clear();
+    clWebtoonRatings.clear();
+    clPendingWebtoonRatings.clear();
+    clWebtoonRatingReads.clear();
+    clContentRatings.clear();
+    clPendingContentRatings.clear();
+    clContentRatingReads.clear();
+    clUpdateWebtoonRatings();
+    clUpdateContentRatings();
+    document.querySelectorAll(".feedback-actions + [role=status]").forEach(message => {
+        message.textContent = "";
+    });
     clFavoriteItems = [];
     clFavoritesRequest++;
     clFavoritesModal.hidden = true;
@@ -2397,19 +2836,22 @@ function clResetAccount(token) {
     clUpdateFavoriteButtons();
 }
 
-function clLogout(showMessage = true) {
-    clResetAccount(null);
-    localStorage.removeItem("contentlab_token");
-    restoreTasteWorkspace("guest");
-    if (showMessage) alert("로그아웃했습니다.");
-}
-
-window.addEventListener("storage", event => {
-    if (event.key === "contentlab_token" && event.newValue !== clToken) {
-        clResetAccount(event.newValue);
-        clRestoreSession();
+async function clLogout(showMessage = true) {
+    let logoutFailed = false;
+    try {
+        const response = await fetch("/api/auth/logout", {
+            method:"POST", credentials:"same-origin"
+        });
+        logoutFailed = !response.ok;
+    } catch {
+        logoutFailed = true;
     }
-});
+    clResetAccount(null);
+    restoreTasteWorkspace("guest");
+    if (showMessage) alert(logoutFailed
+        ? "로그아웃했습니다. 서버 연결이 불안정해 인증 쿠키 만료 여부를 확인해주세요."
+        : "로그아웃했습니다.");
+}
 
 clAuthModal.addEventListener("click", event => {
     if (event.target === clAuthModal) clCloseAuth();
@@ -2434,13 +2876,15 @@ clRestoreSession();
     document.getElementById("clFavorites").after(btn);
 
     const modal = document.createElement("div");
+    modal.id = "clHistoryModal";
     modal.className = "cl-modal";
     modal.hidden = true;
     modal.innerHTML = `
-        <section class="cl-modal-panel">
+        <section class="cl-modal-panel" role="dialog" aria-modal="true" aria-labelledby="clHistoryTitle">
+            <button type="button" class="detail-back cl-modal-back" id="clHistoryBack">← 이전 화면</button>
             <button type="button" class="cl-modal-close" id="clCloseHistory">닫기 ✕</button>
-            <h2>나의 AI 추천 기록</h2>
-            <p id="clHistoryMessage"></p>
+            <h2 id="clHistoryTitle">나의 추천 기록</h2>
+            <p id="clHistoryMessage" role="status"></p>
             <div id="clHistoryList"></div>
         </section>`;
     document.body.appendChild(modal);
@@ -2469,6 +2913,18 @@ clRestoreSession();
 
     document.getElementById("clCloseHistory").onclick = () => {
         modal.hidden = true;
+        btn.focus();
+    };
+
+    function returnToHistory() {
+        closeDetail();
+        modal.hidden = false;
+        document.getElementById("clHistoryBack").focus();
+    }
+
+    document.getElementById("clHistoryBack").onclick = () => {
+        modal.hidden = true;
+        btn.focus();
     };
 
     modal.onclick = event => {
@@ -2480,6 +2936,7 @@ clRestoreSession();
 
         const token = clToken;
         modal.hidden = false;
+        document.getElementById("clCloseHistory").focus();
         const list = document.getElementById("clHistoryList");
         const message = document.getElementById("clHistoryMessage");
 
@@ -2488,9 +2945,7 @@ clRestoreSession();
 
         try {
             const response = await fetch("/api/history", {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                credentials:"same-origin"
             });
 
             if (!response.ok) throw new Error("조회 실패");
@@ -2506,127 +2961,71 @@ clRestoreSession();
                 new Date(b.createdAt) - new Date(a.createdAt)
             );
 
-            data.forEach(item => {
-                const card = document.createElement("div");
-                card.style.cssText = "border:1px solid #94a3b855;padding:18px;border-radius:14px;margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7";
+            data.forEach((item, index) => {
+                const card = addElement(list, "details", "", "history-entry");
+                card.open = index === 0;
+                const summary = addElement(card, "summary", "");
+                addElement(summary, "strong", item.liked || "나의 콘텐츠 취향");
+                addElement(summary, "time", new Date(item.createdAt).toLocaleString("ko-KR"));
 
                 let parsed;
-try {
-    parsed = typeof item.result === "string"
-        ? JSON.parse(item.result) : item.result;
-} catch {
-    parsed = {taste_analysis: item.result};
-}
+                try {
+                    parsed = typeof item.result === "string" ? JSON.parse(item.result) : item.result;
+                } catch {
+                    parsed = {taste_analysis: item.result};
+                }
 
-function addText(tag, value, style = "") {
-    const el = document.createElement(tag);
-    el.textContent = value;
-    el.style.cssText = style;
-    card.appendChild(el);
-}
+                const body = addElement(card, "div", "", "history-content");
+                if (item.preference) addElement(body, "p", "선호 콘텐츠 · " + item.preference, "meta");
+                if (item.disliked) addElement(body, "p", "피하고 싶은 요소 · " + item.disliked, "meta");
+                if (parsed?.taste_analysis) addElement(body, "p", parsed.taste_analysis);
+                if (parsed?.recommendation_source === "local_fallback") {
+                    addElement(body, "p", "Gemini 장애 시 자체 추천 알고리즘으로 생성된 기록입니다.",
+                        "recommendation-fallback-notice");
+                }
+                if (parsed?.recommendation_source === "gemini_supplemented") {
+                    addElement(body, "p", "Gemini 추천에 자체 점수 추천을 보충한 기록입니다.",
+                        "recommendation-fallback-notice");
+                }
 
-addText("small",
-    new Date(item.createdAt).toLocaleString("ko-KR"),
-    "opacity:.65;font-size:13px");
+                const recommendations = Array.isArray(parsed?.recommendations) ? parsed.recommendations : [];
+                for (const rec of recommendations) {
+                    const row = addElement(body, "div", "", "history-work");
+                    const legacyPoster = rec.poster_path || rec.poster;
+                    const posterUrl = rec.poster_url || (typeof legacyPoster === "string" && legacyPoster.startsWith("/")
+                        ? "https://image.tmdb.org/t/p/w185" + legacyPoster : legacyPoster);
+                    renderPoster(addElement(row, "div", "", "poster"), {...rec, poster_url: posterUrl});
+                    const info = addElement(row, "div", "", "history-work-info");
+                    if (rec.id != null && ["movie", "tv", "webtoon"].includes(rec.type)) {
+                        const title = addElement(info, "button", rec.title || "작품", "favorite-title");
+                        title.type = "button";
+                        title.onclick = () => {
+                            modal.hidden = true;
+                            void openDetail(rec, returnToHistory, "추천 기록");
+                        };
+                    } else {
+                        addElement(info, "strong", rec.title || "작품");
+                    }
+                    const meta = rec.type === "webtoon" ? ["웹툰", rec.service_platform] : parseList(rec.ott);
+                    const score = rec.personal_fit_score ?? rec.match_score;
+                    if (typeof score === "number") meta.push(`취향 일치도 ${score}%`);
+                    if (meta.filter(Boolean).length) addElement(info, "p", meta.filter(Boolean).join(" · "), "meta");
+                    if (rec.type === "webtoon" && rec.reason) addElement(info, "p", rec.reason, "reason");
+                }
 
-addText("h3", item.liked || "나의 콘텐츠 취향",
-    "font-size:23px;margin:12px 0");
-
-addText("p", "선호 콘텐츠: " + (item.preference || "-"));
-addText("p", "피하고 싶은 요소: " + (item.disliked || "-"));
-
-addText("h4", "AI 취향 분석",
-    "color:#a78bfa;margin:20px 0 8px");
-
-addText("p", parsed?.taste_analysis || "-",
-    "font-size:15px;line-height:1.8");
-
-addText("h4", "추천 콘텐츠",
-    "color:#a78bfa;margin:20px 0 10px");
-
-const recommendations = parsed?.recommendations || [];
-
-recommendations.forEach((rec, index) => {
-    const row = document.createElement("div");
-    row.style.cssText = "display:flex;align-items:center;gap:15px;padding:14px;margin:10px 0;border:1px solid #94a3b833;border-radius:12px";
-
-    const poster = rec.poster_url || rec.poster_path || rec.poster;
-
-    if (typeof poster === "string" && poster) {
-        const img = document.createElement("img");
-        img.src = poster.startsWith("/")
-            ? "https://image.tmdb.org/t/p/w185" + poster
-            : poster;
-        img.style.cssText = "width:75px;border-radius:8px;object-fit:cover";
-        img.onerror = () => img.remove();
-        row.appendChild(img);
-    }
-
-    const info = document.createElement("div");
-
-    const title = document.createElement("strong");
-    title.textContent = (index + 1) + ". " + (rec.title || "작품");
-    info.appendChild(title);
-
-    const ott = document.createElement("p");
-    ott.textContent = rec.type === "webtoon"
-        ? ["웹툰", rec.service_platform].filter(Boolean).join(" · ")
-        : Array.isArray(rec.ott) ? rec.ott.join(" · ") : (rec.ott || "");
-    ott.style.cssText = "font-size:13px;opacity:.7;margin:6px 0";
-    info.appendChild(ott);
-    if (rec.type === "webtoon") {
-        const score = rec.personal_fit_score ?? rec.match_score;
-        if (typeof score === "number") addElement(info, "p", `취향 일치도 ${score}%`);
-        if (rec.reason) addElement(info, "p", rec.reason, "reason");
-    }
-
-    row.appendChild(info);
-    card.appendChild(row);
-});
-
-/* card.textContent = [
-                    new Date(item.createdAt).toLocaleString("ko-KR"),
-                    "",
-                    "좋아하는 작품: " + (item.liked || "-"),
-                    "싫어하는 요소: " + (item.disliked || "-"),
-                    "선호하는 분위기: " + (item.preference || "-"),
-                    "",
-                    "AI 추천 결과",
-                    item.result || "-"
-                ].join("\n"); */
-
-                const deleteBtn = document.createElement("button");
-deleteBtn.type = "button";
-deleteBtn.textContent = "기록 삭제";
-deleteBtn.style.cssText = "display:block;margin:20px 0 0 auto;padding:9px 16px;border:1px solid #ef4444;border-radius:8px;color:#ef4444;background:transparent;cursor:pointer;font-size:13px";
-
-deleteBtn.onclick = async () => {
-    if (clToken !== token) return;
-    if (!confirm("이 추천 기록을 삭제하시겠습니까?")) return;
-
-    deleteBtn.disabled = true;
-
-    try {
-        const response = await fetch(`/api/history/${item.id}`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error("삭제 실패");
-        }
-
-        if (clToken === token) await btn.onclick();
-    } catch (error) {
-        if (clToken === token) alert("추천 기록을 삭제하지 못했습니다.");
-        deleteBtn.disabled = false;
-    }
-};
-
-card.appendChild(deleteBtn);
-list.appendChild(card);
+                const deleteBtn = addElement(body, "button", "기록 삭제", "history-delete");
+                deleteBtn.type = "button";
+                deleteBtn.onclick = async () => {
+                    if (clToken !== token || !confirm("이 추천 기록을 삭제하시겠습니까?")) return;
+                    deleteBtn.disabled = true;
+                    try {
+                        await clRequest(`/api/history/${encodeURIComponent(item.id)}`, {method: "DELETE"});
+                        if (clToken === token) await btn.onclick();
+                    } catch {
+                        if (clToken === token) message.textContent = "추천 기록을 삭제하지 못했습니다.";
+                        deleteBtn.disabled = false;
+                    }
+                };
             });
         } catch (error) {
             if (clToken === token) message.textContent = "추천 기록을 불러오지 못했습니다.";
@@ -2733,7 +3132,7 @@ list.appendChild(card);
 
         try {
             const response = await fetch("/api/me/stats", {
-                headers: {Authorization:`Bearer ${token}`}
+                credentials:"same-origin"
             });
 
             if (!response.ok) throw new Error("조회 실패");
@@ -2884,9 +3283,9 @@ list.appendChild(card);
         return fetch("/api/me/" + path, {
             method: "PATCH",
             headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + clToken
+                "Content-Type": "application/json"
             },
+            credentials:"same-origin",
             body: JSON.stringify(data)
         });
     }
