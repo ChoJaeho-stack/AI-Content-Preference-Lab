@@ -226,6 +226,7 @@ def parse_title_search(payload: Any, title: str) -> tuple[int, dict[str, Any] | 
 
     target = normalized(title)
     candidates = {}
+    ambiguous_identity = False
     for row in rows:
         if not isinstance(row, dict):
             raise KmasProviderError("KMAS title search contains an invalid row")
@@ -242,13 +243,27 @@ def parse_title_search(payload: Any, title: str) -> tuple[int, dict[str, Any] | 
         # Naver Webtoon for one title, keep the Webtoon row as the selected work.
         if normalized(platform) == normalized("네이버시리즈"):
             continue
-        identity = _json([target, normalized(platform), sorted(normalized(author) for author in authors)])
-        external_id = "title-search:" + hashlib.sha256(identity.encode("utf-8")).hexdigest()
-        record = candidates.setdefault(external_id, {
-            "external_id": external_id, "title": work_title, "authors": authors,
+        # Title search omits the documented mastrId field in its live response.
+        # Keep a deterministic internal identity, but never put it in the
+        # provider external-ID mapping as though KMAS issued it.
+        try:
+            internal_identity = internal_identity_for(work_title, platform, authors)
+        except KmasProviderError:
+            continue
+        record = {
+            "external_id": None, "internal_identity": internal_identity,
+            "title": work_title, "authors": authors,
             "genre": _text(row, "mainGenreCdNm"), "synopsis": "", "cover_source_url": None,
             "serial_status": None, "platform": platform[:80],
-        })
+        }
+        prior = candidates.get(internal_identity)
+        if prior is not None and prior != record:
+            raise KmasProviderError("KMAS title search has conflicting rows without provider IDs")
+        if prior is not None:
+            ambiguous_identity = True
+        candidates[internal_identity] = record
+    if ambiguous_identity:
+        return total, None
     naver_webtoon = {
         external_id: record for external_id, record in candidates.items()
         if normalized(record["platform"]) == normalized("네이버웹툰")
@@ -260,6 +275,34 @@ def parse_title_search(payload: Any, title: str) -> tuple[int, dict[str, Any] | 
     if len(candidates) == 1:
         return total, next(iter(candidates.values()))
     return total, None
+
+
+def internal_identity_for(title: str, platform: str, authors: list[str]) -> str:
+    """Return a deterministic internal key; this value is never a provider ID."""
+    normalize = lambda value: " ".join(unicodedata.normalize("NFKC", value).casefold().split())
+    placeholders = {"네이버웹툰작가", "작가미상", "미상", "unknown", "n/a"}
+    if (not title.strip() or not platform.strip() or not authors
+            or any(normalize(author) in placeholders for author in authors)):
+        raise KmasProviderError("Internal work identity requires title, platform, and author evidence")
+    identity = _json([
+        normalize(title), normalize(platform), sorted(normalize(author) for author in authors),
+    ])
+    return "title-search:" + hashlib.sha256(identity.encode("utf-8")).hexdigest()
+
+
+def internal_authors_match(existing: Any, expected: list[str]) -> bool:
+    """Compare credited authors as an order-independent identity component."""
+    if isinstance(existing, str):
+        try:
+            existing = json.loads(existing)
+        except json.JSONDecodeError:
+            return False
+    if not isinstance(existing, list) or not isinstance(expected, list):
+        return False
+    normalize = lambda value: " ".join(unicodedata.normalize("NFKC", value).casefold().split())
+    if not all(isinstance(author, str) and author.strip() for author in existing + expected):
+        return False
+    return {normalize(author) for author in existing} == {normalize(author) for author in expected}
 
 
 def request_page(settings: KmasSettings, page: int, *, title: str | None = None) -> Any:
@@ -336,7 +379,9 @@ def _json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
-def required_schema_ready(cursor, *, require_cover_source: bool = True) -> bool:
+def required_schema_ready(
+    cursor, *, require_cover_source: bool = True, require_external_ids: bool = True
+) -> bool:
     cursor.execute("""
         SELECT table_name AS table_name, column_name AS column_name
         FROM information_schema.columns
@@ -346,22 +391,41 @@ def required_schema_ready(cursor, *, require_cover_source: bool = True) -> bool:
     """)
     found = {(row["table_name"], row["column_name"]) for row in cursor.fetchall()}
     required = {
-        ("content_external_ids", name) for name in
-        ("provider_code", "external_id", "content_type", "content_id", "source_url")
-    } | {
         ("webtoon_metadata", name) for name in
         ("content_id", "content_type", "service_platform", "cover_source_url", "authors", "genre_tags",
          "story_tags", "mood_tags", "pacing", "serial_status", "source_provider")
     }
+    if require_external_ids:
+        required.update({
+            ("content_external_ids", name) for name in
+            ("provider_code", "external_id", "content_type", "content_id", "source_url")
+        })
     if not require_cover_source:
         required.discard(("webtoon_metadata", "cover_source_url"))
-    return required.issubset(found)
+    if not required.issubset(found):
+        return False
+    if not require_external_ids:
+        cursor.execute("""
+            SELECT COUNT(*) AS external_mapping_foreign_keys
+            FROM information_schema.key_column_usage
+            WHERE table_schema=DATABASE()
+              AND table_name='webtoon_metadata'
+              AND referenced_table_name='content_external_ids'
+        """)
+        if cursor.fetchone()["external_mapping_foreign_keys"] != 0:
+            return False
+    return True
 
 
-def sync_schema_ready(connection, *, require_cover_source: bool = True) -> bool:
+def sync_schema_ready(
+    connection, *, require_cover_source: bool = True, require_external_ids: bool = True
+) -> bool:
     cursor = connection.cursor(dictionary=True)
     try:
-        if not required_schema_ready(cursor, require_cover_source=require_cover_source):
+        if not required_schema_ready(
+            cursor, require_cover_source=require_cover_source,
+            require_external_ids=require_external_ids,
+        ):
             return False
         cursor.execute("""
             SELECT COUNT(*) AS table_count FROM information_schema.tables
@@ -387,7 +451,7 @@ def persist_catalog(
     if not records:
         return 0
     require_cover_source = any(
-        not row["external_id"].startswith("title-search:")
+        row.get("external_id")
         and (not row.get("preserve_missing_metadata") or row.get("cover_source_url"))
         for row in records
     )
@@ -395,7 +459,11 @@ def persist_catalog(
     cover_value = "%s, " if require_cover_source else ""
     cursor = connection.cursor(dictionary=True)
     try:
-        if not required_schema_ready(cursor, require_cover_source=require_cover_source):
+        require_external_ids = any(row.get("external_id") for row in records)
+        if not required_schema_ready(
+            cursor, require_cover_source=require_cover_source,
+            require_external_ids=require_external_ids,
+        ):
             raise KmasProviderError("KMAS catalog schema is missing; apply the reviewed additive migration first")
         cursor.execute("SELECT GET_LOCK('contentlab_kmas_catalog_sync', 0) AS acquired")
         if cursor.fetchone()["acquired"] != 1:
@@ -406,22 +474,55 @@ def persist_catalog(
             before_write(cursor)
         for row in records:
             external_id = row["external_id"]
+            internal_identity = row.get("internal_identity")
+            if not external_id and not internal_identity:
+                raise KmasProviderError("KMAS catalog row has no official or internal identity")
             provider = row.get("provider", PROVIDER_CODE)
             official_url = row.get("official_url")
-            cursor.execute("""
-                SELECT content_id, content_type FROM content_external_ids
-                WHERE provider_code=%s AND external_id=%s
-                FOR UPDATE
-            """, (provider, external_id))
-            identity = cursor.fetchone()
+            identity = None
+            if external_id:
+                cursor.execute("""
+                    SELECT content_id, content_type FROM content_external_ids
+                    WHERE provider_code=%s AND external_id=%s
+                    FOR UPDATE
+                """, (provider, external_id))
+                identity = cursor.fetchone()
             if identity and identity["content_type"] != "webtoon":
                 raise KmasProviderError("KMAS provider ID is already assigned to another content type")
-            content_id = int(identity["content_id"]) if identity else _content_id(external_id, provider)
+            stable_identity = external_id or internal_identity
+            content_id = int(identity["content_id"]) if identity else _content_id(stable_identity, provider)
             if not identity:
-                cursor.execute("SELECT type FROM contents WHERE id=%s FOR UPDATE", (content_id,))
+                cursor.execute("""
+                    SELECT c.type, c.title, m.service_platform, m.authors, m.source_provider
+                    FROM contents c
+                    LEFT JOIN webtoon_metadata m
+                      ON m.content_id=c.id AND m.content_type='webtoon'
+                    WHERE c.id=%s FOR UPDATE
+                """, (content_id,))
                 collision = cursor.fetchone()
                 if collision:
-                    raise KmasProviderError("Generated KMAS ID collides with an existing content ID; no catalog changes committed")
+                    same_internal_work = (
+                        not external_id
+                        and collision.get("type") == "webtoon"
+                        and collision.get("title") == row["title"]
+                        and collision.get("service_platform") == row["platform"]
+                        and collision.get("source_provider") == provider
+                    )
+                    if same_internal_work:
+                        existing_authors = collision.get("authors")
+                        same_internal_work = internal_authors_match(existing_authors, row["authors"])
+                    if not same_internal_work:
+                        raise KmasProviderError("Generated KMAS catalog ID collides with a different content row; no catalog changes committed")
+                    identity = {"content_id": content_id, "content_type": "webtoon"}
+            if not identity:
+                cursor.execute(
+                    "SELECT id, title FROM contents WHERE type='webtoon' AND title=%s FOR UPDATE",
+                    (row["title"],),
+                )
+                if cursor.fetchall():
+                    raise KmasProviderError(
+                        "Existing webtoon title requires identity review; no catalog changes committed"
+                    )
 
             genres = [row["genre"]] if row.get("genre") else []
             synopsis = row.get("synopsis", "") if settings.synopsis_display_allowed else ""
@@ -438,11 +539,12 @@ def persist_catalog(
                 VALUES (%s, 'webtoon', %s, %s, JSON_ARRAY(), NULL, 0, JSON_ARRAY(), %s, FALSE)
                 ON DUPLICATE KEY UPDATE {", ".join(content_update)}
             """, (content_id, row["title"], synopsis, poster_url))
-            cursor.execute("""
-                INSERT INTO content_external_ids (provider_code, external_id, content_type, content_id, source_url)
-                VALUES (%s, %s, 'webtoon', %s, %s)
-                ON DUPLICATE KEY UPDATE content_id=VALUES(content_id), source_url=COALESCE(VALUES(source_url),source_url)
-            """, (provider, external_id, content_id, official_url))
+            if external_id:
+                cursor.execute("""
+                    INSERT INTO content_external_ids (provider_code, external_id, content_type, content_id, source_url)
+                    VALUES (%s, %s, 'webtoon', %s, %s)
+                    ON DUPLICATE KEY UPDATE content_id=VALUES(content_id), source_url=COALESCE(VALUES(source_url),source_url)
+                """, (provider, external_id, content_id, official_url))
             cover_params = (row.get("cover_source_url"),) if require_cover_source else ()
             metadata_update = [
                 "service_platform=VALUES(service_platform)", "authors=VALUES(authors)",
@@ -506,7 +608,13 @@ def main(argv: list[str] | None = None) -> None:
     """One explicit, approval-gated sync command; never runs at app startup."""
     parser = argparse.ArgumentParser(description="Import approved KMAS webtoon metadata")
     parser.add_argument("--title", action="append", default=[], help="Search for one exact webtoon title (repeatable)")
+    parser.add_argument(
+        "--approved-db-write", action="store_true",
+        help="Explicitly allow the catalog transaction after the KMAS request has been approved",
+    )
     args = parser.parse_args(argv)
+    if not args.approved_db_write:
+        parser.error("Catalog writes require explicit --approved-db-write after separate DryRun review")
     titles = list(dict.fromkeys(title.strip() for title in args.title))
     if "" in titles:
         parser.error("--title cannot be blank")
@@ -519,7 +627,10 @@ def main(argv: list[str] | None = None) -> None:
 
     connection = get_connection()
     try:
-        if not sync_schema_ready(connection, require_cover_source=not titles):
+        if not sync_schema_ready(
+            connection, require_cover_source=not titles,
+            require_external_ids=not bool(titles),
+        ):
             raise KmasProviderError("KMAS sync schema is missing; apply the reviewed additive migrations first")
         connection.commit()
 
@@ -535,8 +646,8 @@ def main(argv: list[str] | None = None) -> None:
                 if record is None:
                     skipped += 1
                     continue
-                external_id = record["external_id"]
-                if by_id.setdefault(external_id, record) != record:
+                identity_key = record["external_id"] or record["internal_identity"]
+                if by_id.setdefault(identity_key, record) != record:
                     raise KmasProviderError("KMAS title searches returned conflicting records")
             records = list(by_id.values())
             print(f"KMAS title searches: {len(titles)} checked, {skipped} without a unique exact match")

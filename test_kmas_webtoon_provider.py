@@ -1,9 +1,11 @@
 import unittest
 import urllib.parse
 import os
+import io
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+from contextlib import redirect_stderr
 
 import kmas_webtoon_provider as provider
 
@@ -59,7 +61,7 @@ class KmasProviderTests(unittest.TestCase):
             self.settings(mode="live", base_url="https://api.example.invalid").validate_live_access()
         self.assertTrue(settings.api_key == "secret")
 
-    def test_live_title_search_deduplicates_serial_and_filters_editions(self):
+    def test_live_title_search_quarantines_duplicate_internal_identity_and_filters_editions(self):
         serial = {"prdctNm": "Test Webtoon", "title": "Test Webtoon",
                   "pltfomCdNm": "Webtoon Platform", "pictrWritrNm": "Test Artist",
                   "outline": "Restricted synopsis", "imageDownloadUrl": "https://example.invalid/cover"}
@@ -70,11 +72,26 @@ class KmasProviderTests(unittest.TestCase):
             "Test Webtoon",
         )
         self.assertEqual(total, 5)
+        self.assertIsNone(item)
+        unique_total, item = provider.parse_title_search(
+            {"result": {"resultState": "success", "totalCount": 1}, "itemList": [serial]},
+            "Test Webtoon",
+        )
+        self.assertEqual(unique_total, 1)
         self.assertEqual(item["title"], "Test Webtoon")
         self.assertEqual(item["authors"], ["Test Artist"])
         self.assertEqual(item["synopsis"], "")
         self.assertIsNone(item["cover_source_url"])
-        self.assertLess(provider._content_id(item["external_id"]), 2**53)
+        self.assertIsNone(item["external_id"])
+        self.assertTrue(item["internal_identity"].startswith("title-search:"))
+        self.assertLess(provider._content_id(item["internal_identity"]), 2**53)
+
+    def test_title_search_rejects_placeholder_author_for_internal_identity(self):
+        payload = {"result": {"resultState": "success", "totalCount": 1}, "itemList": [{
+            "prdctNm": "Test Webtoon", "title": "Test Webtoon", "pltfomCdNm": "네이버웹툰",
+            "pictrWritrNm": "네이버웹툰작가",
+        }]}
+        self.assertEqual(provider.parse_title_search(payload, "Test Webtoon"), (1, None))
 
     def test_title_search_prefers_webtoon_over_series_and_nested_book_editions(self):
         rows = [
@@ -130,15 +147,26 @@ class KmasProviderTests(unittest.TestCase):
                 patch.object(provider, "persist_catalog", calls.persist), \
                 patch("builtins.print"):
             provider.main(["--title", "Test Webtoon", "--title", "Missing",
-                           "--title", "Test Webtoon"])
+                           "--title", "Test Webtoon", "--approved-db-write"])
         _, record = provider.parse_title_search(payloads[0], "Test Webtoon")
-        schema.assert_called_once_with(connection, require_cover_source=False)
+        schema.assert_called_once_with(
+            connection, require_cover_source=False, require_external_ids=False
+        )
         self.assertEqual([call[0] for call in calls.mock_calls],
                          ["reserve", "request", "reserve", "request", "persist"])
         self.assertEqual([call.kwargs["title"] for call in calls.request.call_args_list],
                          ["Test Webtoon", "Missing"])
         calls.persist.assert_called_once_with(connection, [record], settings)
         connection.close.assert_called_once()
+
+    def test_title_cli_requires_explicit_database_write_approval_before_side_effects(self):
+        with patch.object(KmasSettings, "from_env") as settings, \
+                patch("database.get_connection") as get_connection, \
+                redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                provider.main(["--title", "Test Webtoon"])
+        settings.assert_not_called()
+        get_connection.assert_not_called()
 
     def test_title_cli_does_not_save_a_partial_batch(self):
         settings = self.settings(mode="live", approved=True, api_key="test-key",
@@ -157,7 +185,7 @@ class KmasProviderTests(unittest.TestCase):
                 patch.object(provider, "request_page", side_effect=[complete, incomplete]), \
                 patch.object(provider, "persist_catalog") as persist:
             with self.assertRaisesRegex(KmasProviderError, "incomplete"):
-                provider.main(["--title", "First", "--title", "Incomplete"])
+                provider.main(["--title", "First", "--title", "Incomplete", "--approved-db-write"])
         persist.assert_not_called()
         connection.close.assert_called_once()
 
@@ -272,6 +300,7 @@ class KmasProviderTests(unittest.TestCase):
             None,             # no existing provider ID
             None,             # no internal ID collision
         ]
+        cursor.fetchall.return_value = []
         with patch.object(provider, "required_schema_ready", return_value=True):
             inserted = provider.persist_catalog(connection, [{
                 "external_id": "mock-1", "title": "가상 검증작", "authors": ["작가"],
@@ -287,6 +316,125 @@ class KmasProviderTests(unittest.TestCase):
         metadata_insert = next(call for call in cursor.execute.call_args_list
                                if "INSERT INTO webtoon_metadata" in call.args[0])
         self.assertEqual(metadata_insert.args[1][3], "https://api.example.invalid/cover")
+
+    def test_title_search_internal_identity_never_becomes_provider_external_id(self):
+        connection = MagicMock()
+        cursor = MagicMock()
+        connection.cursor.return_value = cursor
+        cursor.fetchone.side_effect = [
+            {"acquired": 1},  # advisory lock
+            None,              # no content ID collision
+        ]
+        cursor.fetchall.return_value = []
+        record = {
+            "external_id": None,
+            "internal_identity": "title-search:verified-fingerprint",
+            "title": "Verified title", "authors": ["Verified author", "Second author"],
+            "genre": "Action", "synopsis": "", "cover_source_url": None,
+            "platform": "Naver Webtoon", "serial_status": None,
+        }
+        with patch.object(provider, "required_schema_ready", return_value=True):
+            inserted = provider.persist_catalog(connection, [record], self.settings())
+        self.assertEqual(inserted, 1)
+        self.assertFalse(any("INSERT INTO content_external_ids" in call.args[0]
+                             for call in cursor.execute.call_args_list))
+        content_insert = next(call for call in cursor.execute.call_args_list
+                              if "INSERT INTO contents" in call.args[0])
+        expected_internal_id = provider._content_id(record["internal_identity"])
+        self.assertEqual(content_insert.args[1][0], expected_internal_id)
+
+    def test_internal_only_metadata_does_not_require_external_id_schema(self):
+        cursor = MagicMock()
+        cursor.fetchone.return_value = {"external_mapping_foreign_keys": 0}
+        metadata_columns = (
+            "content_id", "content_type", "service_platform", "authors", "genre_tags",
+            "story_tags", "mood_tags", "pacing", "serial_status", "source_provider",
+        )
+        cursor.fetchall.return_value = [
+            {"table_name": "webtoon_metadata", "column_name": column}
+            for column in metadata_columns
+        ]
+        self.assertTrue(provider.required_schema_ready(
+            cursor, require_cover_source=False, require_external_ids=False
+        ))
+        self.assertFalse(provider.required_schema_ready(
+            cursor, require_cover_source=False, require_external_ids=True
+        ))
+
+    def test_internal_only_metadata_fails_closed_while_external_id_fk_exists(self):
+        cursor = MagicMock()
+        cursor.fetchall.return_value = [
+            {"table_name": "webtoon_metadata", "column_name": column}
+            for column in (
+                "content_id", "content_type", "service_platform", "authors", "genre_tags",
+                "story_tags", "mood_tags", "pacing", "serial_status", "source_provider",
+            )
+        ]
+        cursor.fetchone.return_value = {"external_mapping_foreign_keys": 1}
+        self.assertFalse(provider.required_schema_ready(
+            cursor, require_cover_source=False, require_external_ids=False
+        ))
+
+    def test_title_search_internal_identity_is_idempotent_for_matching_existing_row(self):
+        connection = MagicMock()
+        cursor = MagicMock()
+        connection.cursor.return_value = cursor
+        record = {
+            "external_id": None,
+            "internal_identity": "title-search:verified-fingerprint",
+            "title": "Verified title", "authors": ["Verified author", "Second author"],
+            "genre": "Action", "synopsis": "", "cover_source_url": None,
+            "platform": "Naver Webtoon", "serial_status": None,
+        }
+        cursor.fetchone.side_effect = [
+            {"acquired": 1},
+            {"type": "webtoon", "title": "Verified title", "service_platform": "Naver Webtoon",
+             "authors": '["Second author", "Verified author"]', "source_provider": "kmas"},
+        ]
+        with patch.object(provider, "required_schema_ready", return_value=True):
+            inserted = provider.persist_catalog(connection, [record], self.settings())
+        self.assertEqual(inserted, 1)
+        self.assertFalse(any("INSERT INTO content_external_ids" in call.args[0]
+                             for call in cursor.execute.call_args_list))
+        self.assertTrue(connection.commit.called)
+
+    def test_new_internal_identity_with_existing_title_is_blocked_for_manual_review(self):
+        connection = MagicMock()
+        cursor = MagicMock()
+        connection.cursor.return_value = cursor
+        cursor.fetchone.side_effect = [{"acquired": 1}, None]
+        cursor.fetchall.return_value = [{"id": 991, "title": "Verified title"}]
+        record = {
+            "external_id": None, "internal_identity": "title-search:verified-fingerprint",
+            "title": "Verified title", "authors": ["Another author"], "genre": "Action",
+            "synopsis": "", "cover_source_url": None, "platform": "Naver Webtoon",
+            "serial_status": None,
+        }
+        with patch.object(provider, "required_schema_ready", return_value=True):
+            with self.assertRaisesRegex(KmasProviderError, "requires identity review"):
+                provider.persist_catalog(connection, [record], self.settings())
+        connection.rollback.assert_called_once()
+        self.assertFalse(any("INSERT INTO contents" in call.args[0]
+                             for call in cursor.execute.call_args_list))
+
+    def test_title_search_internal_identity_collision_with_different_work_rolls_back(self):
+        connection = MagicMock()
+        cursor = MagicMock()
+        connection.cursor.return_value = cursor
+        cursor.fetchone.side_effect = [
+            {"acquired": 1},
+            {"type": "webtoon", "title": "Different title", "service_platform": "Naver Webtoon",
+             "authors": '["Verified author"]', "source_provider": "kmas"},
+        ]
+        with patch.object(provider, "required_schema_ready", return_value=True):
+            with self.assertRaisesRegex(KmasProviderError, "collides with a different content row"):
+                provider.persist_catalog(connection, [{
+                    "external_id": None, "internal_identity": "title-search:verified-fingerprint",
+                    "title": "Verified title", "authors": ["Verified author"], "genre": "Action",
+                    "synopsis": "", "cover_source_url": None, "platform": "Naver Webtoon",
+                    "serial_status": None,
+                }], self.settings())
+        connection.rollback.assert_called_once()
 
 
 if __name__ == "__main__":

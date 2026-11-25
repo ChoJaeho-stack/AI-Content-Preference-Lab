@@ -671,6 +671,47 @@ class RecommendationTest(unittest.TestCase):
         self.assertIn(1.0, payload["profile_summary"]["genres"].values())
         self.assertIn(-1.0, payload["profile_summary"]["genres"].values())
 
+    def test_webtoon_positive_story_match_can_use_verified_official_tags(self):
+        verified = {
+            **content(901, "webtoon", "검증된 회귀 태그 작품", []),
+            "source_provider": "naver_webtoon", "external_id": "901",
+            "official_url": "https://comic.naver.com/webtoon/list?titleId=901",
+            "taste_features": {"genres": [], "story": [], "mood": [], "pacing": "",
+                               "official_tags": ["회귀"]},
+        }
+        with patch.object(ai_server, "get_contents", return_value=[verified]), \
+                patch.object(ai_server, "ai_mode", "disabled"):
+            response = self.client.post("/recommend", json={
+                "taste": "스토리 선호 추천", "contentType": "webtoon",
+                "tasteProfile": {"dimensions": {"story": {"회귀": 1.0}}},
+            })
+        self.assertEqual(response.status_code, 200)
+        recommendations = response.json()["recommendations"]
+        self.assertEqual([item["id"] for item in recommendations], [901])
+        self.assertGreater(recommendations[0]["personal_fit_score"], 50)
+        self.assertEqual(recommendations[0]["fit_reasons"], [
+            {"dimension": "story", "feature": "회귀", "signal": "match"}
+        ])
+
+    def test_webtoon_positive_preference_never_fills_top_five_with_unmatched_neutral_rows(self):
+        catalog = [
+            {
+                **content(index, "webtoon", f"중립 작품 {index}", []),
+                "taste_features": {"genres": ["액션"], "story": [], "mood": [], "pacing": "",
+                                   "official_tags": ["전투"]},
+            }
+            for index in range(910, 916)
+        ]
+        with patch.object(ai_server, "get_contents", return_value=catalog), \
+                patch.object(ai_server, "ai_mode", "disabled"):
+            response = self.client.post("/recommend", json={
+                "taste": "스토리 선호 추천", "contentType": "webtoon",
+                "tasteProfile": {"dimensions": {"story": {"회귀": 1.0}}},
+            })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["recommendations"], [])
+        self.assertIn("조건에 맞는 새 웹툰", response.json()["taste_analysis"])
+
     def test_same_title_from_multiple_catalog_rows_is_not_merged_into_one_seed(self):
         title = "화산귀환"
         rows = [

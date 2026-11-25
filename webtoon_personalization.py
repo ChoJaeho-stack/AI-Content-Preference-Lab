@@ -177,6 +177,11 @@ def score_candidate(
         )
         if dimension == "pacing" and not candidate_values:
             candidate_values = set(_values(features.get("pace")))
+        # Source-linked catalog tags are verified facts, even when their
+        # taxonomy has not yet assigned them to a separate story/mood/pacing
+        # column. Allow exact matches to those facts without fuzzy inference.
+        if dimension != "official_tags":
+            candidate_values.update(_candidate_values(features.get("official_tags"), False))
         matched = [(name, value) for name, value in active_preferences.items()
                    if name in candidate_values]
         dimension_weight = 1.5 if dimension == "genres" else 1.0

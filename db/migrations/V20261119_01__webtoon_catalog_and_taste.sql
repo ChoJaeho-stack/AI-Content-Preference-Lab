@@ -1,5 +1,8 @@
--- Draft only: this migration has NOT been applied to any database.
--- It creates additive structures and leaves existing movie/TV rows untouched.
+-- Original additive schema. A read-only inspection of the current local MySQL
+-- found these tables and the original source-identity foreign key already
+-- present; other environments must be inspected independently.
+-- content_external_ids is an optional verified provider-ID mapping. A source
+-- may have verified catalog metadata before it exposes a stable external ID.
 
 CREATE TABLE content_external_ids (
     provider_code VARCHAR(80) NOT NULL,
@@ -37,11 +40,9 @@ CREATE TABLE webtoon_metadata (
     CONSTRAINT fk_webtoon_metadata_content
         FOREIGN KEY (content_id, content_type)
         REFERENCES contents (id, type)
-        ON UPDATE RESTRICT ON DELETE RESTRICT,
-    CONSTRAINT fk_webtoon_metadata_source_identity
-        FOREIGN KEY (source_provider, content_type, content_id)
-        REFERENCES content_external_ids (provider_code, content_type, content_id)
         ON UPDATE RESTRICT ON DELETE RESTRICT
+    -- source_provider records provenance; it is not an external identifier.
+    -- Do not require an external-ID mapping for internally identified records.
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE member_taste_surveys (

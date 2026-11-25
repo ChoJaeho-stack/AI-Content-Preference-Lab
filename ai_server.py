@@ -828,7 +828,13 @@ def recommend(request: RecommendRequest):
             item for item in eligible
             if any(reason["signal"] == "match" for reason in item["fit_reasons"])
         ]
-        if positively_matched:
+        has_positive_preferences = any(
+            isinstance(features, dict) and any(
+                isinstance(value, (int, float)) and value > 0 for value in features.values()
+            )
+            for features in dimensions.values()
+        ) if isinstance(dimensions, dict) else False
+        if has_positive_preferences:
             eligible = positively_matched
         ordered = sorted(
             eligible,

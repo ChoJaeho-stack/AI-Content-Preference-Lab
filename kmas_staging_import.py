@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 
 from kmas_webtoon_provider import (
     KmasProviderError, KmasSettings, PROVIDER_CODE, _content_id, _safe_source_url,
-    persist_catalog, required_schema_ready,
+    internal_authors_match, internal_identity_for, persist_catalog, required_schema_ready,
 )
 
 
@@ -37,6 +37,8 @@ def stage(source):
     for row in reader:
         title = (row["Title"] or "").strip()
         external_id = (row["KMASExternalId"] or "").strip()
+        identity_kind = (row.get("IdentityKind") or "official").strip().lower()
+        internal_identity = (row.get("InternalIdentity") or "").strip()
         platform = (row["Platform"] or "").strip()
         genre = (row["Genre"] or "").strip()
         synopsis = (row["Synopsis"] or "").strip()
@@ -55,11 +57,24 @@ def stage(source):
         blockers = []
         if None in row or any(row[column] is None for column in columns):
             blockers.append("malformed_csv_row")
-        if row["IsMock"] != "false" or row["ResolutionStatus"] != "VERIFIED":
+        expected_status = "VERIFIED_INTERNAL" if identity_kind == "internal" else "VERIFIED"
+        if row["IsMock"] != "false" or row["ResolutionStatus"] != expected_status:
             blockers.append("not_verified_live_resolution")
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,190}", external_id):
+        if identity_kind == "internal":
+            if external_id:
+                blockers.append("internal_identity_must_not_claim_provider_id")
+            try:
+                expected_identity = internal_identity_for(title, platform, authors) if valid_authors else None
+            except KmasProviderError:
+                expected_identity = None
+            if not internal_identity or internal_identity != expected_identity:
+                blockers.append("invalid_internal_identity")
+        elif identity_kind != "official":
+            blockers.append("unsupported_identity_kind")
+        elif not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,190}", external_id):
             blockers.append("invalid_provider_id")
-        if row["ListSeCd"] != "1" or row["ISBN"] or row["SetISBN"]:
+        if ((identity_kind != "internal" and row["ListSeCd"] != "1")
+                or (row["ListSeCd"] and row["ListSeCd"] != "1") or row["ISBN"] or row["SetISBN"]):
             blockers.append("missing_webtoon_code_or_book_indicator")
         if not title or len(title) > 255:
             blockers.append("invalid_title")
@@ -76,23 +91,32 @@ def stage(source):
             ("authors", valid_authors), ("genre", genre), ("synopsis", synopsis), ("cover_source", cover),
             ("serial_start_date", (row.get("SerialStartDate") or "").strip()),
         ) if not value]
-        outcome = {"title": title, "external_id": external_id, "missing": missing, "blockers": blockers}
+        outcome = {
+            "title": title, "identity_kind": identity_kind,
+            "external_id": external_id or None, "internal_identity": internal_identity or None,
+            "missing": missing, "blockers": blockers,
+        }
         outcomes.append(outcome)
         if blockers:
             continue
         record = {
-            "external_id": external_id, "title": title, "platform": platform,
+            "external_id": external_id or None,
+            "internal_identity": internal_identity if identity_kind == "internal" else None,
+            "title": title, "platform": platform,
             "authors": list(dict.fromkeys(author.strip() for author in authors)),
             "genre": genre, "synopsis": synopsis, "cover_source_url": cover, "serial_status": None,
             "preserve_missing_metadata": True,
         }
         candidates.append((outcome, record))
-    identifiers = Counter(record["external_id"].casefold() for _, record in candidates)
+    identifiers = Counter(record["external_id"].casefold() for _, record in candidates if record["external_id"])
+    internal_ids = Counter(record["internal_identity"] for _, record in candidates if record["internal_identity"])
     work_keys = Counter(work_key(record) for _, record in candidates)
     staged = []
     for outcome, record in candidates:
-        if identifiers[record["external_id"].casefold()] > 1:
+        if record["external_id"] and identifiers[record["external_id"].casefold()] > 1:
             outcome["blockers"].append("duplicate_provider_id")
+        if record["internal_identity"] and internal_ids[record["internal_identity"]] > 1:
+            outcome["blockers"].append("duplicate_internal_identity")
         if work_keys[work_key(record)] > 1:
             outcome["blockers"].append("duplicate_work_identity")
         if not outcome["blockers"]:
@@ -200,7 +224,11 @@ def verify_backup(path, database_review, snapshots):
 
 
 def examine_database(cursor, records, *, lock=False):
-    if not required_schema_ready(cursor, require_cover_source=any(row.get("cover_source_url") for row in records)):
+    if not required_schema_ready(
+        cursor,
+        require_cover_source=any(row.get("cover_source_url") for row in records),
+        require_external_ids=any(row.get("external_id") for row in records),
+    ):
         raise KmasProviderError("Required webtoon catalog tables or columns are missing")
     cursor.execute("SELECT DATABASE() AS schema_name, @@server_uuid AS server_uuid")
     target = cursor.fetchone()
@@ -211,13 +239,20 @@ def examine_database(cursor, records, *, lock=False):
     suffix = " FOR UPDATE" if lock else ""
     for record in records:
         external_id = record["external_id"]
+        internal_identity = record.get("internal_identity")
         provider = record.get("provider", PROVIDER_CODE)
-        cursor.execute(
-            "SELECT * FROM content_external_ids WHERE provider_code=%s AND external_id=%s" + suffix,
-            (provider, external_id),
-        )
-        identity = cursor.fetchone()
-        content_id = int(identity["content_id"]) if identity else _content_id(external_id, provider)
+        if external_id:
+            cursor.execute(
+                "SELECT * FROM content_external_ids WHERE provider_code=%s AND external_id=%s" + suffix,
+                (provider, external_id),
+            )
+            identity = cursor.fetchone()
+        else:
+            identity = None
+        stable_identity = external_id or internal_identity
+        if not stable_identity:
+            raise KmasProviderError("Staged row has no external or internal identity")
+        content_id = int(identity["content_id"]) if identity else _content_id(stable_identity, provider)
         cursor.execute("SELECT * FROM contents WHERE id=%s ORDER BY type" + suffix, (content_id,))
         contents = cursor.fetchall()
         cursor.execute(
@@ -230,33 +265,57 @@ def examine_database(cursor, records, *, lock=False):
             content["type"] == "webtoon" for content in contents
         ) or (metadata and metadata["source_provider"] != provider)):
             blockers.append("existing_provider_identity_conflict")
-        if not identity and contents:
+        same_internal_work = bool(
+            internal_identity and len(contents) == 1 and metadata
+            and contents[0]["type"] == "webtoon" and contents[0]["title"] == record["title"]
+            and metadata["service_platform"] == record["platform"]
+            and metadata["source_provider"] == provider
+            and internal_authors_match(metadata.get("authors"), record["authors"])
+        )
+        if not identity and contents and not same_internal_work:
             blockers.append("internal_id_collision")
-        if not identity:
-            cursor.execute(
-                """
-                SELECT c.id, c.title, w.service_platform, x.external_id
-                FROM contents c
-                LEFT JOIN webtoon_metadata w ON w.content_id=c.id AND w.content_type=c.type
-                LEFT JOIN content_external_ids x ON x.content_id=c.id AND x.content_type=c.type
-                WHERE c.type='webtoon' AND (c.title=%s
-                    OR w.official_url IN (%s, %s) OR x.source_url IN (%s, %s))
-                ORDER BY c.id, x.provider_code, x.external_id
-                """ + suffix, (
-                    record["title"],
-                    record.get("official_url"),
-                    alternate_naver_url(record.get("official_url")),
-                    record.get("official_url"),
-                    alternate_naver_url(record.get("official_url")),
-                ),
-            )
+        if not identity and not same_internal_work:
+            if external_id:
+                cursor.execute(
+                    """
+                    SELECT c.id, c.title, w.service_platform, x.external_id
+                    FROM contents c
+                    LEFT JOIN webtoon_metadata w ON w.content_id=c.id AND w.content_type=c.type
+                    LEFT JOIN content_external_ids x ON x.content_id=c.id AND x.content_type=c.type
+                    WHERE c.type='webtoon' AND (c.title=%s
+                        OR w.official_url IN (%s, %s) OR x.source_url IN (%s, %s))
+                    ORDER BY c.id, x.provider_code, x.external_id
+                    """ + suffix, (
+                        record["title"], record.get("official_url"),
+                        alternate_naver_url(record.get("official_url")), record.get("official_url"),
+                        alternate_naver_url(record.get("official_url")),
+                    ),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT c.id, c.title, w.service_platform, w.official_url
+                    FROM contents c
+                    LEFT JOIN webtoon_metadata w ON w.content_id=c.id AND w.content_type=c.type
+                    WHERE c.type='webtoon' AND (c.title=%s OR w.official_url IN (%s, %s))
+                    ORDER BY c.id
+                    """ + suffix, (
+                        record["title"], record.get("official_url"),
+                        alternate_naver_url(record.get("official_url")),
+                    ),
+                )
             if cursor.fetchall():
                 blockers.append("existing_title_requires_identity_review")
         rows.append({
-            "external_id": external_id, "content_id": content_id,
-            "action": "blocked" if blockers else "update" if identity else "insert", "blockers": blockers,
+            "external_id": external_id or None, "internal_identity": internal_identity or None,
+            "content_id": content_id,
+            "action": "blocked" if blockers else "update" if identity or same_internal_work else "insert",
+            "blockers": blockers,
         })
-        snapshots.append({"external_id": external_id, "identity": identity, "contents": contents, "metadata": metadata})
+        snapshots.append({
+            "external_id": external_id or None, "internal_identity": internal_identity or None,
+            "identity": identity, "contents": contents, "metadata": metadata,
+        })
     internal_ids = Counter(row["content_id"] for row in rows)
     for row in rows:
         if internal_ids[row["content_id"]] > 1:

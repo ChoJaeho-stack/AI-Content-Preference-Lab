@@ -1,5 +1,5 @@
--- Additive support for approval-gated KMAS sync. Apply only in an isolated
--- webtoon catalog schema after reviewing the deployment-specific migration plan.
+-- Additive support for approval-gated KMAS sync. Apply only after database
+-- owner approval and a verified backup; this table stores request counts only.
 CREATE TABLE kmas_api_daily_usage (
     usage_date DATE NOT NULL,
     request_count INT NOT NULL DEFAULT 0,
